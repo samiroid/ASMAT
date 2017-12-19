@@ -88,6 +88,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
-DATA/embeddings/user_vectors.txt
-DATA/embeddings/word_vectors.txt
-code/sma_toolkit
+DATA/*
+experiments/*
+
