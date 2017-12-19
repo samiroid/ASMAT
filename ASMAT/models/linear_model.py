@@ -70,13 +70,13 @@ if __name__=="__main__":
 	if run_id is None: run_id = "+".join(args.features)
 	results = {"acc":round(acc,3),
 			   "avgF1":round(avgF1,3),			   
-			   "features":repr(args.features),
-			   ">":fname,
+			   "features":"+".join(args.features),
+			   "dataset":fname,
 			   "run_id":run_id}
-
-	helpers.print_results(results,columns=[">","run_id","acc","avgF1"])
+	cols = ["dataset", "run_id", "features", "acc", "avgF1"]
+	helpers.print_results(results, columns=cols)
 	if args.res_path is not None:
-		helpers.save_results(results, args.res_path, columns=["run_id","acc","avgF1"])
+		helpers.save_results(results, args.res_path, columns=cols)
 	
 
 

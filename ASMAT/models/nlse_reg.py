@@ -41,12 +41,11 @@ def init_W(size, rng, init=None, shared=True):
     else:
         return W.astype(theano.config.floatX)
 
-class NN():
+class NN_reg():
     '''
     Embedding subspace
     '''
-    def __init__(self, E, sub_size, model_file=None, weight_CM=None,
-                 init=None):
+    def __init__(self, E, sub_size, model_file=None, init=None):
         # Random Seed
         if init is None:
             rng = np.random.RandomState(1234)        
@@ -81,43 +80,37 @@ class NN():
         # Fixed parameters
         self.params = [E, S, C]
         # Compile
-        self.compile(weight_CM)
+        self.compile()
 
     def forward(self, x):
         return self.fwd(x.astype('int32'))
 
-    def compile(self, weight_CM):
+    def compile(self):
         '''
         Forward pass and Gradients
-        '''
+        '''        
         E, S, C = self.params
         # FORWARD PASS
-        # Embedding layer subspace
-        self.z0    = T.ivector()                    # tweet in one hot        
-        z1         = E[:, self.z0]                 # embedding
-        z2         = T.nnet.sigmoid(T.dot(S, z1))  # subspace
+        # Embedding layer subspace        
+        self.z0 = T.ivector()                            
+        z1 = T.nnet.sigmoid(E[:, self.z0])  # embedding
+        z2 = T.nnet.sigmoid(T.dot(S, z1))  # subspace
         # Hidden layer
-        z3         = T.dot(C, z2)
-        z4         = T.sum(z3, 1)                   # Bag of words
-        self.hat_y = T.nnet.softmax(z4.T).T
+        self.hat_y = T.dot(C, z2)[0]
         # Compile forward pass
-        self.fwd = theano.function([self.z0], self.hat_y)        
-        # TRAINING COST 
-        # Train cost minus log probability
-        self.z1 = z1
-        self.y  = T.ivector()                             
-        if weight_CM:
-            WCM    = (weight_CM[self.y, :].T)*T.log(self.hat_y)
-            self.F = -T.mean(WCM.sum(0))        
-        else:
-            self.F = -T.mean(T.log(self.hat_y)[self.y])        
+        self.fwd = theano.function(
+            [self.z0], self.hat_y, allow_input_downcast=True)
+        # TRAINING COST        
+        self.z1 = z1        
+        self.y = T.fscalar()
+        #squared loss error
+        self.F = ((self.hat_y - self.y)**2).sum()
         self.cost = theano.function([self.z0, self.y], self.F)
-
         # Naming
         self.z0.name = 'z0'
         self.z1.name = 'z1'
-        self.y.name  = 'y'
-        self.F.name  = 'F'
+        self.y.name = 'y'
+        self.F.name = 'F'
 
     def save(self, model_file):
         #create output folder if needed

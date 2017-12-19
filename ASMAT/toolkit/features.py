@@ -35,6 +35,9 @@ if __name__ == "__main__":
 	if args.boe is not None or args.nlse:
 		assert args.vectors is not None, "missing vectors"
 
+	#make sure the paths are correct
+	if not args.out_folder.endswith("/"): args.out_folder += "/"
+	
 	#create output folder if needed
 	if not os.path.exists(os.path.dirname(args.out_folder)):
 	    os.makedirs(os.path.dirname(args.out_folder))   	
