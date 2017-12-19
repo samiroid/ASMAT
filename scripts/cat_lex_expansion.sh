@@ -18,7 +18,7 @@ else
 fi
 
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments"
-BASE=$PROJECT_PATH"/neural_sma/"$DATASET
+BASE=$PROJECT_PATH"/cat_lex_expansion/"$DATASET
 
 #create folders
 mkdir -p $BASE
@@ -34,7 +34,7 @@ TEST=$DATASET"_test"
 EMBEDDINGS="DATA/embeddings/str_skip_50.txt"
 FILTERED_EMBEDDINGS=$FEATURES"/vectors_str_skip_50.txt"
 
-echo "NEURAL SMA > " $DATASET
+echo "LEXICON EXPANSION > " $DATASET
 
 CLEAN=0
 if (($CLEAN > 0)); then
@@ -62,26 +62,24 @@ if (($SPLIT > 0)); then
 fi
 
 
+
 ### INDEX EXTRACTION ###
-EXTRACT=1
+EXTRACT=0
 if (($EXTRACT > 0)); then
 	echo $RED"##### EXTRACT INDEX #####"$COLOR_OFF
 	#extract vocabulary and indices
-	python ASMAT/toolkit/extract.py -input $DATA"/"$TRAIN $DATA"/"$DEV $DATA"/"$TEST \
-									-idx_labels \
-									-out_folder $FEATURES \
-									-vectors $EMBEDDINGS 
+	python ASMAT/toolkit/extract.py -input $DATA"/"$TRAIN $DATA"/"$DEV $DATA"/"$TEST -out_folder $FEATURES \
+	-vectors $EMBEDDINGS 	
 fi
 
-
 ### COMPUTE FEATURES ###
-GET_FEATURES=1
+GET_FEATURES=0
 if (($GET_FEATURES > 0)); then
 	echo $RED"##### GET FEATURES ##### "$COLOR_OFF
 	#BOE
 	python ASMAT/toolkit/features.py -input $FEATURES"/"$TRAIN $FEATURES"/"$DEV $FEATURES"/"$TEST \
 							-out_folder $FEATURES \
-							-boe bin sum \
+							-boe bin \
 							-vectors $FILTERED_EMBEDDINGS	
 	python ASMAT/toolkit/features.py -input $FEATURES"/"$TRAIN \
 							-out_folder $FEATURES \
@@ -89,20 +87,31 @@ if (($GET_FEATURES > 0)); then
 							-vectors $FILTERED_EMBEDDINGS	
 fi
 
-### LINEAR MODELS ###
-LINEAR=1
-if (($LINEAR > 0)); then
+### EXPANSION MODELS ###
+EXPANDER=1
+if (($EXPANDER > 0)); then
 	VERBOSE=1
-	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF
-	python ASMAT/models/linear_model.py -verbose $VERBOSE -train $FEATURES"/"$TRAIN \
-							 -features BOE_bin -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOE.txt" 
-	python ASMAT/models/linear_model.py -verbose $VERBOSE -train $FEATURES"/"$TRAIN \
-							 -features BOE_sum -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOE.txt"	
-	python ASMAT/models/linear_model.py -verbose $VERBOSE -train $FEATURES"/"$TRAIN \
-							 -features BOE_bin BOE_sum -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOE.txt"	
+	echo $RED"##### EXPANSION MODELS ##### "$COLOR_OFF
+	python ASMAT/apps/lexicon_expander.py -verbose $VERBOSE -train $FEATURES"/"$TRAIN \
+										-test $FEATURES"/"$TEST \
+										-features BOE_bin \
+										-type categorical \
+										-model linear \
+										-res_path $RESULTS"/"$DATASET".txt"
+	python ASMAT/apps/lexicon_expander.py -verbose $VERBOSE -train $FEATURES"/"$TRAIN \
+										-test $FEATURES"/"$TEST \
+										-features BOE_bin \
+										-type categorical \
+										-model l1 \
+										-res_path $RESULTS"/"$DATASET".txt" 	
+	python ASMAT/apps/lexicon_expander.py -verbose $VERBOSE -train $FEATURES"/"$TRAIN \
+										-test $FEATURES"/"$TEST \
+										-features BOE_bin \
+										-type categorical \
+										-model rbf \
+										-res_path $RESULTS"/"$DATASET".txt"				
+
+										
 fi
 
 # ### NLSE #####
@@ -115,7 +124,7 @@ if (($NLSE > 0)); then
                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
                            	   		   -emb $FILTERED_EMBEDDINGS \
                                		   -run_id "NLSE" \
-                           	   		   -res_path $RESULTS"/NLSE.txt" \
+                           	   		   -res_path $RESULTS"/"$DATASET".txt" \
 									   -sub_size 5 \
 									   -lrate 0.05 \
 									   -n_epoch 5
