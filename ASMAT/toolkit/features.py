@@ -1,78 +1,70 @@
-import numpy as np
 import os
+import codecs
+import cPickle
+import argparse
 
-def NLSE(X, Y):
-	lens = np.array([len(tr) for tr in X]).astype(int)
-	st = np.cumsum(np.concatenate((np.zeros((1, )), lens[:-1]), 0)).astype(int)
-	ed = (st + lens)
-	x = np.zeros((ed[-1], 1))
-	for i, ins_x in enumerate(X): x[st[i]:ed[i]] = np.array(ins_x,dtype=int)[:, None]
-	X = x     
-	Y = np.array(Y)[:, None] # Otherwise slices are scalars not Tensors
-	return X, Y, st, ed
-	# # save
-	# out_file = args.out + os.path.splitext(os.path.split(train_file)[1])[0] + ".pkl"
-	# with open(out_file,"w") as fod: cPickle.dump([X, Y, st, ed], fod, cPickle.HIGHEST_PROTOCOL)		
+from ipdb import set_trace
+import numpy as np
 
-def BOW(docs, wrd2idx, agg='freq'):
-	"""
-		Extract bag-of-word features
-	"""
-	assert agg in ["freq","bin"]
-	X = np.zeros((len(docs), len(wrd2idx)))	
-	for i, doc in enumerate(docs): X[i, np.array(doc)] = 1
-	return X
+import sys
+sys.path.append("..")
 
-def BOE(docs, E, agg='sum', mean=False): 
-	"""
-		Build Bag-of-Embedding features
-	"""
-	assert agg in ["sum","bin"]
-	X = np.zeros((len(docs), E.shape[0]))			
-	if agg == 'sum':		
-		for i, doc in enumerate(docs):       			
-			X[i,:] = E[:,doc].T.sum(axis=0)                 			
-	elif agg == 'bin':		
-		for i, doc in enumerate(docs):       			 
-			unique = list(set(doc))			
-			X[i,:] = E[:,unique].T.sum(axis=0)									
-	return X
+from ASMAT.lib.extract import docs2idx, build_vocabulary
+from ASMAT.lib import embeddings, features
+from ASMAT.lib.data import read_dataset, flatten_list
 
-# def Brown_Clusters(brown_clusters, user_2_words, wrd2idx, depth=None):	
-# 	cluster2idx = {c:i for i,c in enumerate(set(brown_clusters.values()))}	
-# 	idx2wrd = {i:w for w,i in wrd2idx.items()}
-# 	n_clusters = len(set(brown_clusters.values()))
-# 	X = np.zeros((len(user_2_words),n_clusters))		
-# 	for x, doc in user_2_words.items():       			
-# 		clusters = [ brown_clusters[idx2wrd[w]] for w in doc if w in brown_clusters]
-# 		cluster_ids = map(lambda x:cluster2idx[x], clusters)
-# 		X[x,cluster_ids] = 1
-# 	return X
+# from ASMAT.toolkit.extract import docs2idx, word2idx
+# from ASMAT.toolkit import features
+# from ASMAT.toolkit import embeddings 
 
-# def lda_features(lda_path, lda_idx_path, user_2_words, wrd2idx):
+
+def get_parser():
+	par = argparse.ArgumentParser(description="Extract Features")
+	par.add_argument('-input', type=str, required=True, nargs='+', help='train data')  
+	par.add_argument('-out_folder', type=str, required=True, help='output folder')
+	par.add_argument('-vectors', type=str, help='path to embeddings')          
+	par.add_argument('-bow', type=str, choices=['bin', 'freq'], nargs='+', help='bow features')
+	par.add_argument('-boe', type=str, choices=['bin', 'sum'], nargs='+', help='boe features')             
+	par.add_argument('-nlse', action="store_true")
+	return par
+
+if __name__ == "__main__":	
+	parser = get_parser()
+	args = parser.parse_args()	
+	assert args.bow is not None or args.boe is not None or args.nlse, "please, specify some features"
+	if args.boe is not None or args.nlse:
+		assert args.vectors is not None, "missing vectors"
+
+	#create output folder if needed
+	if not os.path.exists(os.path.dirname(args.out_folder)):
+	    os.makedirs(os.path.dirname(args.out_folder))   	
 	
-# 	lda_reader = LDAReader(None)
-# 	lda_reader.load_model(lda_path, lda_idx_path)
-# 	#note that gensim needs the actual documents so I am converting from indices back to actual words
-# 	idx2wrd = {i:w for w,i in wrd2idx.items()}
-
-# 	# docs = [" ".join([idx2wrd[w] for w in m ]) for m in X_words]
-# 	# X_lda = np.array([lda_reader.get_topics(doc, binary=True) for doc in docs])	
-
-# 	X = np.zeros((len(user_2_words),lda_reader.model.num_topics))			
-	
-# 	for x, words in user_2_words.items():     
-# 		txt = " ".join([idx2wrd[w] for w in words ])	
-# 		topic_vector = lda_reader.get_topics(txt, binary=True) 
-# 		# print "*"*90		
-# 		# print topic_vector
-# 		X[x,:] = topic_vector
-# 		# print "*"*90
-# 	return X
-
-
-
-
-
-
-
+	for dataset in args.input:
+		print "[extracting features @ {}]".format(repr(dataset))
+		E = None
+		with open(dataset,"rb") as fid:
+			X, Y, vocabulary, label_map = cPickle.load(fid)
+			basename = os.path.splitext(os.path.basename(dataset))[0]
+			path = args.out_folder
+			if args.bow is not None:
+				for agg in args.bow:
+					fname = basename+"_BOW_"+agg							
+					print "\t > BOW ({})".format(fname)
+					bow = features.BOW(X, vocabulary, agg=agg)
+					np.save(args.out_folder+fname, bow)						
+					# print "\t > {}".format(repr(bow))
+					# print len(X), bow.shape
+			if args.boe is not None:
+				for agg in args.boe:
+					fname = basename+"_BOE_"+agg							
+					print "\t > BOE ({})".format(fname)
+					E, _ = embeddings.read_embeddings(args.vectors,wrd2idx=vocabulary)
+					boe = features.BOE(X, E, agg=agg)
+					# print boe.shape
+					np.save(args.out_folder+fname, boe)						
+			if args.nlse:
+				fname = basename+"_NLSE.pkl"
+				X, Y, st, ed = features.NLSE(X, Y)				
+				E, _ = embeddings.read_embeddings(args.vectors,wrd2idx=vocabulary)
+				with open(args.out_folder+fname,"w") as fod: 
+					cPickle.dump([X, Y, vocabulary, label_map, E, st, ed], fod, cPickle.HIGHEST_PROTOCOL)	
