@@ -1,8 +1,8 @@
 import argparse
 import codecs
-import cPickle 
+import cPickle
 from ipdb import set_trace
-import os 
+import os
 import sys
 sys.path.append("..")
 
@@ -10,86 +10,101 @@ from ASMAT.lib.extract import docs2idx, build_vocabulary
 from ASMAT.lib import embeddings
 from ASMAT.lib.data import read_dataset, flatten_list, filter_labels
 
-def get_parser():
-    parser = argparse.ArgumentParser(description="Extract Indices")
-    parser.add_argument('-input', type=str, required=True, nargs='+', help='train data')  
-    parser.add_argument('-out_folder',type=str, required=True, help='output folder')				
-    parser.add_argument('-vectors', type=str, nargs='+', help='path to embeddings')  
-    parser.add_argument('-labels', type=str, nargs='+', help='label set')  
-    parser.add_argument('-vocab_size', type=int, help='max number of types to keep in the vocabulary')
-    parser.add_argument('-vocab_path', type=str, help='path to a precomputed vocabulary')
-    parser.add_argument('-save_vocab', type=str, help='path to save vocabulary')    
-    parser.add_argument('-idx_labels', action="store_true",
-                        help="convert labels to numeric indices. Useful for classification")
-    return parser
+def get_vocabulary(fnames, max_words=None):	
+	datasets = []	
+	for fname in fnames:		
+		ds = read_dataset(fname)
+		datasets.append(ds)
+	vocab_docs = [x[1] for x in flatten_list(datasets)]	
+	vocab = build_vocabulary(vocab_docs, max_words=max_words)
+	return vocab
 
-if __name__=="__main__":	
-	parser = get_parser()
-	args = parser.parse_args()		
+def vectorize(dataset, vocabulary, idx_labels=True):
+	docs = [x[1] for x in dataset]
+	labels = [x[0] for x in dataset]
+	X, _ = docs2idx(docs, vocabulary)
+	label2idx = None
+	if idx_labels:
+		label2idx = build_vocabulary(labels)
+		Y = [label2idx[l] for l in labels]
+	else:
+		Y = [float(l) for l in labels]
+	return X, Y, label2idx
+
+def run(fnames, vocab, opts):
+	#read data
 	datasets = []
-	#make sure the paths are correct
-	if not args.out_folder.endswith("/"): args.out_folder+="/"
+	for fname in fnames:
+		print "[reading data @ {}]".format(repr(fname))
+		ds = read_dataset(fname, labels=opts.labels)
+		datasets.append(ds)	
+	#vectorize
+	print "[vectorizing documents]"
+	for name, ds in zip(fnames, datasets):
+		X, Y, label_map = vectorize(ds, vocab, opts.idx_labels)
+		basename = os.path.splitext(os.path.basename(name))[0]
+		path = opts.out_folder + basename
+		print "[saving data @ {}]".format(path)
+		with open(path, "wb") as fid:
+			cPickle.dump([X, Y, vocab, label_map], fid, -1)
+	return vocab
+
+def get_parser():
+	par = argparse.ArgumentParser(description="Extract Indices")
+	par.add_argument('-input', type=str, required=True, nargs='+', help='train data')
+	par.add_argument('-out_folder', type=str, required=True, help='output folder')	
+	par.add_argument('-cv', type=int, help='crossfold')
+	par.add_argument('-cv_from', type=str, nargs='*', help="files for crossvalidation")
+	par.add_argument('-embeddings', type=str, nargs='+', help='path to embeddings')
+	par.add_argument('-idx_labels', action="store_true", \
+						help="convert labels to numeric indices. Useful for classification")
+	par.add_argument('-labels', type=str, nargs='+', help='label set')
+	par.add_argument('-vocab_size', type=int, \
+						help='max number of types to keep in the vocabulary')    		
+	par.add_argument('-vocab_from', type=str, nargs='*', \
+						help="compute vocabulary from these files")
+	
+	return par
+
+if __name__ == "__main__":
+	parser = get_parser()
+	args = parser.parse_args()
 	if args.labels is not None:
 		print "[labels: {}]".format(repr(args.labels))
-	for dataset in args.input:
-		print("[reading data @ {}]".format(repr(dataset)))	
-		ds = read_dataset(dataset, labels=args.labels)		
-		datasets.append(ds)
-		
-	#flatten the list of lists 
-	flat_dataset = flatten_list(datasets)
-	all_docs = [x[1] for x in flat_dataset]
-	all_labels = [x[0] for x in flat_dataset]	
-	
-	#vocabulary	
-	if args.vocab_path is not None:
-		print "[opening vocabulary @ {}]".format(args.vocab_path)
-		with open(args.vocab_path) as fid:
-			vocabulary = cPickle.load(fid)
-	else: 
-		vocabulary = build_vocabulary(all_docs,max_words=args.vocab_size)	
 	#create output folder if needed
+	args.out_folder = args.out_folder.rstrip("/") + "/"
 	if not os.path.exists(os.path.dirname(args.out_folder)):
-	    os.makedirs(os.path.dirname(args.out_folder))   	
+	    os.makedirs(os.path.dirname(args.out_folder))
 
-	if args.save_vocab is not None:				
-		print "[saving vocabulary @ {}]".format(args.save_vocab)		
-		if not os.path.exists(os.path.dirname(args.save_vocab)):
-			os.makedirs(os.path.dirname(args.save_vocab))
-		with open(args.save_vocab,"wb") as fid:
-			cPickle.dump(vocabulary, fid, -1)
-	
-	if args.vectors is not None:
-		for vecs_in in args.vectors:
-			print "[reading embeddings @ {}]".format(vecs_in)
-			vecs_basename = os.path.splitext(os.path.basename(vecs_in))[0]
-			#get the basename (will use the basename of the first dataset)
-			dataset_basename = os.path.splitext(os.path.basename(args.input[0]))[0]
-			vecs_out = args.out_folder+"vectors_"+vecs_basename+".txt"
-			print "[saving embeddings @ {}]".format(vecs_out)
-			embeddings.filter_embeddings(vecs_in, vecs_out, vocabulary)	   
-	
-	if args.idx_labels:
-		label_map = build_vocabulary(all_labels)
-		print "[converting docs to indices]"	
-		for name, ds in zip(args.input, datasets): 
-			docs   = [x[1] for x in ds]
-			labels = [x[0] for x in ds]	
-			Y = [label_map[l] for l in labels]
-			X, _ = docs2idx(docs, vocabulary)			
-			basename = os.path.splitext(os.path.basename(name))[0]
-			path = args.out_folder+basename
-			print "[saving data @ {}]".format(path)
-			with open(path,"wb") as fid:
-				cPickle.dump([X, Y, vocabulary, label_map], fid, -1)
+	#loop through cross-validation folds (if any)
+	if args.cv is None:
+		all_fnames = args.input
+		print "[computing vocabulary]"
+		if args.vocab_from is not None:
+			vocabulary = get_vocabulary(args.vocab_from, args.vocab_size)
+		else:
+			vocabulary = get_vocabulary([args.input[0]], args.vocab_size)
+		run(all_fnames, vocabulary, args)
 	else:
-		print "[converting docs to indices]"
-		for name, ds in zip(args.input, datasets):
-			docs = [x[1] for x in ds]
-			Y = [float(x[0]) for x in ds]						
-			X, _ = docs2idx(docs, vocabulary)
-			basename = os.path.splitext(os.path.basename(name))[0]
-			path = args.out_folder + basename
-			print "[saving data @ {}]".format(path)
-			with open(path, "wb") as fid:
-				cPickle.dump([X, Y, vocabulary, None], fid, -1)
+		assert args.cv > 2, "need at leat 2 folds for cross-validation"
+		for cv_fold in xrange(1, args.cv+1):
+			if args.cv_from is None:
+				cv_fnames = [f+"_"+str(cv_fold) for f in args.input]
+			else:
+				cv_fnames = [f + "_" + str(cv_fold) for f in args.cv_from]
+			print "[computing vocabulary]"
+			if args.vocab_from is not None:
+				cv_vocab_fnames = [f+"_"+str(cv_fold) for f in args.vocab_from]				
+				vocabulary = get_vocabulary(cv_vocab_fnames, args.vocab_size)
+			else:
+				vocabulary = get_vocabulary([args.cv_fnames[0]], args.vocab_size)
+
+			run(cv_fnames, vocabulary, args)						
+			
+	#extract embeddings
+	if args.embeddings is not None:
+		for vecs_in in args.embeddings:
+			print "[reading embeddings @ {}]".format(vecs_in)
+			vecs_out = args.out_folder + os.path.basename(vecs_in)
+			print "[saving embeddings @ {}]".format(vecs_out)
+			embeddings.filter_embeddings(vecs_in, vecs_out, vocabulary)
