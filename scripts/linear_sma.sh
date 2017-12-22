@@ -19,7 +19,7 @@ fi
 
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments"
 BASE=$PROJECT_PATH"/linear_sma/"$DATASET
-
+HYPERPARAMS=$PROJECT_PATH"/confs/default.cfg"
 #create folders
 mkdir -p $BASE
 DATA=$BASE"/DATA"
@@ -35,9 +35,9 @@ echo "LINEAR SMA > " $DATASET
 #OPTIONS
 CLEAN=0
 SPLIT=0
-EXTRACT=1
+EXTRACT=0
 GET_FEATURES=0
-LINEAR=0
+LINEAR=1
 
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
@@ -74,19 +74,24 @@ if (($GET_FEATURES > 0)); then
 	echo $RED"##### GET FEATURES ##### "$COLOR_OFF
 	#BOW
 	python ASMAT/toolkit/features.py -input $FEATURES"/"$TRAIN $FEATURES"/"$DEV $FEATURES"/"$TEST \
-							-out_folder $FEATURES -bow bin freq 	
+									-bow bin freq \
+									-out_folder $FEATURES 
 fi
 
 ### LINEAR MODELS ###
 if (($LINEAR > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF
-	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-							 -features BOW_bin -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOW.txt" 
-	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-							 -features BOW_freq -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOW.txt"	
-	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-							 -features BOW_freq BOW_bin -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOW.txt"	
+	python ASMAT/models/linear_model.py -features BOW_bin \
+										-train $FEATURES"/"$TRAIN \
+							  			-test $FEATURES"/"$TEST \
+										-dev $FEATURES"/"$DEV \
+										-hyperparams $HYPERPARAMS \
+							 			-res_path $RESULTS"/BOW.txt" \
+							 
+	# python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
+	# 						 -features BOW_freq -test $FEATURES"/"$TEST \
+	# 						 -res_path $RESULTS"/BOW.txt"	
+	# python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
+	# 						 -features BOW_freq BOW_bin -test $FEATURES"/"$TEST \
+	# 						 -res_path $RESULTS"/BOW.txt"	
 fi
