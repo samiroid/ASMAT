@@ -18,14 +18,16 @@ else
 fi
 
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments"
-BASE=$PROJECT_PATH"/neural_sma/"$DATASET
+BASE=$PROJECT_PATH"/sma/neural/"$DATASET
+RESULTS=$PROJECT_PATH"/sma/results/"$DATASET".txt"
+RESULTS=$PROJECT_PATH"/sma/results/lowres_sma.txt"
+HYPERPARAMS=$PROJECT_PATH"/confs/default.cfg"
 
 #create folders
 mkdir -p $BASE
 DATA=$BASE"/DATA"
 FEATURES=$BASE"/features"
 MODELS=$BASE"/models"
-RESULTS=$BASE"/results"
 
 #TXT
 TRAIN=$DATASET"_train"
@@ -34,14 +36,15 @@ TEST=$DATASET"_test"
 EMBEDDINGS="DATA/embeddings/str_skip_50.txt"
 FILTERED_EMBEDDINGS=$FEATURES"/str_skip_50.txt"
 
-echo "NEURAL SMA > " $DATASET
 #OPTIONS
-CLEAN=1
+CLEAN=0
 SPLIT=1
 EXTRACT=1
 GET_FEATURES=1
 LINEAR=1
 NLSE=0
+
+echo "NEURAL SMA > " $DATASET
 
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
@@ -72,9 +75,9 @@ if (($EXTRACT > 0)); then
 	echo $RED"##### EXTRACT INDEX #####"$COLOR_OFF
 	#extract vocabulary and indices
 	python ASMAT/toolkit/extract.py -input $DATA"/"$TRAIN $DATA"/"$DEV $DATA"/"$TEST \
-									-idx_labels \
 									-vocab_from $DATA"/"$TRAIN $DATA"/"$DEV $DATA"/"$TEST \
 									-out_folder $FEATURES \
+									-idx_labels \
 									-embeddings $EMBEDDINGS 
 fi
 
@@ -99,13 +102,13 @@ if (($LINEAR > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF
 	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
 							 -features BOE_bin -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOE.txt" 
+							 -res_path $RESULTS
 	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
 							 -features BOE_sum -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOE.txt"	
+							 -res_path $RESULTS
 	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
 							 -features BOE_bin BOE_sum -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS"/BOE.txt"	
+							 -res_path $RESULTS
 fi
 
 # ### NLSE #####
@@ -117,7 +120,7 @@ if (($NLSE > 0)); then
                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
                            	   		   -emb $FILTERED_EMBEDDINGS \
                                		   -run_id "NLSE" \
-                           	   		   -res_path $RESULTS"/NLSE.txt" \
+                           	   		   -res_path $RESULTS
 									   -sub_size 5 \
 									   -lrate 0.05 \
 									   -n_epoch 5

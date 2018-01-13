@@ -16,16 +16,17 @@ if [ -z "$2" ]
 else
 	RUN_ID=$DATASET"_"$2
 fi
-
+#config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments"
-BASE=$PROJECT_PATH"/linear_sma/"$DATASET
+BASE=$PROJECT_PATH"/sma/linear/"$DATASET
 HYPERPARAMS=$PROJECT_PATH"/confs/default.cfg"
+RESULTS=$PROJECT_PATH"/sma/results/"$DATASET".txt"
+RESULTS=$PROJECT_PATH"/sma/results/lowres_sma.txt"
 #create folders
 mkdir -p $BASE
 DATA=$BASE"/DATA"
 FEATURES=$BASE"/features"
 MODELS=$BASE"/models"
-RESULTS=$BASE"/results"
 #TXT
 TRAIN=$DATASET"_train"
 DEV=$DATASET"_dev"
@@ -35,16 +36,15 @@ echo "LINEAR SMA > " $DATASET
 #OPTIONS
 CLEAN=0
 SPLIT=0
-EXTRACT=0
-GET_FEATURES=0
+EXTRACT=1
+GET_FEATURES=1
 LINEAR=1
 
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
 	rm -rf $FEATURES/*.* || True
 	rm -rf $MODELS/*.* || True
-	rm -rf $DATA/*.* || True
-	rm $RESULTS/*.* || True
+	rm -rf $DATA/*.* || True	
 fi
 ### DATA SPLIT ###
 if (($SPLIT > 0)); then
@@ -65,8 +65,8 @@ if (($EXTRACT > 0)); then
 	echo $RED"##### EXTRACT INDEX #####"$COLOR_OFF
 	#extract vocabulary and indices
 	python ASMAT/toolkit/extract.py -input $DATA"/"$TRAIN $DATA"/"$DEV $DATA"/"$TEST \
-									-out_folder $FEATURES \
 									-vocab_from $DATA"/"$TRAIN $DATA"/"$DEV \
+									-out_folder $FEATURES \
 									-idx_labels	
 fi
 ### COMPUTE FEATURES ###
@@ -85,13 +85,12 @@ if (($LINEAR > 0)); then
 										-train $FEATURES"/"$TRAIN \
 							  			-test $FEATURES"/"$TEST \
 										-dev $FEATURES"/"$DEV \
-										-hyperparams $HYPERPARAMS \
-							 			-res_path $RESULTS"/BOW.txt" \
+							 			-res_path $RESULTS
+										 # -hyperparams $HYPERPARAMS \
 							 
-	# python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-	# 						 -features BOW_freq -test $FEATURES"/"$TEST \
-	# 						 -res_path $RESULTS"/BOW.txt"	
-	# python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-	# 						 -features BOW_freq BOW_bin -test $FEATURES"/"$TEST \
-	# 						 -res_path $RESULTS"/BOW.txt"	
+	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
+							 -features BOW_freq -test $FEATURES"/"$TEST \
+							 -res_path $RESULTS
+	
+	
 fi

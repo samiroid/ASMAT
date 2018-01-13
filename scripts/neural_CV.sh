@@ -18,7 +18,7 @@ else
 fi
 
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments"
-BASE=$PROJECT_PATH"/neural_CV/"$DATASET
+BASE=$PROJECT_PATH"/CV/neural_CV/"$DATASET
 
 #create folders
 mkdir -p $BASE

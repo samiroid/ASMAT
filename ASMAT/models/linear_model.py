@@ -91,10 +91,10 @@ def run(train, test, run_id, features, hyperparameters={}, res_path=None):
 			"train_size":len(X_train),
 			"test_size":len(X_test),
 			"hyper":repr(hyperparameters)}
-	cols = ["dataset", "run_id", "hyper", "acc", "avgF1"]
+	cols = ["dataset", "run_id", "acc", "avgF1","hyper"]
 	helpers.print_results(results, columns=cols)
 	if res_path is not None:
-		cols = ["dataset", "run_id", "features", "hyper", "acc", "avgF1"]
+		cols = ["dataset", "run_id", "features", "acc", "avgF1", "hyper"]
 		helpers.save_results(results, res_path, columns=cols)
 		
 def get_parser():
@@ -122,7 +122,7 @@ if __name__=="__main__":
 	#train	
 	print "[features: {}]".format("+".join(args.features))
 	if args.run_id is None: args.run_id = "+".join(args.features)		
-	if args.hyperparams is not None: 
+	if len(args.hyperparams) > 0: 
 		assert args.dev is not None, "Need a dev set for hyperparameter search"
 	#loop through cross-validation folds (if any)
 	if args.cv is None:			
