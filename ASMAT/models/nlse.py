@@ -1,24 +1,18 @@
-'''
-SemEval models
-'''
-
 import cPickle
 import numpy as np
 import os
-from pdb import set_trace
+try:
+    from ipdb import set_trace
+except ImportError:
+    from pdb import set_trace
 import theano
 import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
-# DEBUGGING
+from sklearn.metrics import f1_score, accuracy_score
+import sys
 
-def dropout(x, p, training=True, seed=1234):
-    srng = RandomStreams(seed)
-    if training:
-        y = T.switch(srng.binomial(size=x.shape, p=p), x, 0)
-    else:
-        y = p*x 
-    return y 
-
+RAND_SEED=1234
+TMP_MODELS="/tmp/subspace.pkl"
 def init_W(size, rng, init=None, shared=True):
     '''
     Random initialization
@@ -33,53 +27,184 @@ def init_W(size, rng, init=None, shared=True):
     elif init == 'glorot-sigmoid':    
         w0 = 4*np.sqrt(6./(n_in + n_out))   
     else:
-        w0 = init
+        w0 = 1
     W = np.asarray(rng.uniform(low=-w0, high=w0, size=size))
-
     if shared:
         return theano.shared(W.astype(theano.config.floatX), borrow=True)
     else:
         return W.astype(theano.config.floatX)
 
-class NN():
+def build_input(X):
+	lens = np.array([len(tr) for tr in X]).astype(int)
+	st = np.cumsum(np.concatenate((np.zeros((1, )), lens[:-1]), 0)).astype(int)
+	ed = (st + lens)
+	x = np.zeros((ed[-1], 1))
+	for i, ins_x in enumerate(X):
+		x[st[i]:ed[i]] = np.array(ins_x, dtype=int)[:, None]
+	X = x
+	return X, st, ed
+
+def colstr(string, color):
+    if color is None:
+        cstring = string
+    elif color == 'red':
+        cstring = "\033[31m" + string  + "\033[0m"
+    elif color == 'green':    
+        cstring = "\033[32m" + string  + "\033[0m"
+    return cstring    
+
+def weighted_confusion_matrix(pos_penalty=0, neg_penalty=0, neut_penalty=0):
+    """
+    """
+    weigthed_CM = np.zeros((3, 3))
+    weigthed_CM[0, :] = np.array([1, 0, pos_penalty ])  # positive
+    weigthed_CM[1, :] = np.array([0, 1, neg_penalty ])  # negative
+    weigthed_CM[2, :] = np.array([0, 0, neut_penalty])  # neutral
+    # Normalize
+    weigthed_CM = weigthed_CM * 3. / weigthed_CM.sum()
+    weigthed_CM = weigthed_CM.astype(theano.config.floatX)
+    weigthed_CM = theano.shared(weigthed_CM, borrow=True)
+    
+    return weigthed_CM
+
+def evaluate(model, X, Y):
+    # Evaluation
+    cr = 0.
+    mapp = np.array([1, 2, 0])
+    ConfMat = np.zeros((3, 3))
+    Y_hat = np.zeros(len(Y), dtype='int32')
+    # dev_p_y = np.zeros((3, dev_y.shape[0]))
+    for j, x, y in zip(np.arange(len(X)), X, Y):
+        # Prediction
+        x = np.array(x)
+        p_y = model.forward(x)
+        hat_y = np.argmax(p_y)
+        Y_hat[j]=hat_y
+        # Confusion matrix
+        ConfMat[mapp[y], mapp[hat_y]] += 1
+        # Accuracy
+        cr = (cr*j + (hat_y == y).astype(float))/(j+1)
+    avgF1 = f1_score(Y, Y_hat,average="macro")        
+    acc = accuracy_score(Y, Y_hat)            
+    # binary_f1 = helpers.FmesSemEval(Y_hat, Y)        
+
+    return avgF1, acc
+
+def train_nlse(nn, train_x, train_y, dev_x, dev_y,silent):    
+    train_x, st, ed = build_input(train_x)
+    n_sent_train = len(st)    
+    train_y = np.array(train_y)    
+    # Ensure types compatible with GPU
+    train_x = train_x.astype('int32')
+    # Otherwise slices are scalars not Tensors
+    train_y = train_y[:, None].astype('int32')
+    st = st.astype('int32')
+    ed = ed.astype('int32')
+    # Store as shared variables (push into the GPU)
+    train_x = theano.shared(train_x, borrow=True)
+    train_y = theano.shared(train_y, borrow=True)
+    st = theano.shared(st, borrow=True)
+    ed = theano.shared(ed, borrow=True)
+    # SGD Update rule
+    # E = nn.params[0]
+    # Sub-space: Do not update E
+    updates = [(pr, pr - nn.lrate * T.grad(nn.F, pr))
+               for pr in nn.params[1:]]
+    # Batch
+    i = T.lscalar()
+    givens = {nn.z0: train_x[st[i]:ed[i], 0], nn.y: train_y[i]}
+    # Compile
+    train_batch = theano.function([i], nn.F, updates=updates, givens=givens)
+    train_idx = np.arange(n_sent_train).astype('int32')
+    # TRAIN
+    last_obj = None
+    last_Fm = None
+    best_Fm = [0, 0]
+    last_Acc = None    
+    for i in np.arange(nn.n_epoch):
+        # Epoch train
+        obj = 0
+        n = 0
+        if nn.randomize:
+            nn.rng.shuffle(train_idx)
+        for j in train_idx:
+            obj += train_batch(j)
+            # INFO
+            if not n % 10 and not silent:
+                print "\rEpoch: %d\%d | %d/%d %s" % (i + 1, nn.n_epoch, n + 1, n_sent_train, " "),
+                sys.stdout.flush()
+            n += 1
+        Fm, cr = evaluate(nn, dev_x, dev_y)
+
+        # INFO
+        if last_Fm:
+            if best_Fm[0] < Fm:
+                # Keep best model
+                best_Fm = [Fm, i + 1]
+                nn.save(TMP_MODELS)
+                best = '*'
+            else:
+                best = ''
+            delta_Fm = Fm - last_Fm
+            if delta_Fm >= 0:
+                delta_str = colstr("+%2.2f" % (delta_Fm * 100), 'green')
+            else:
+                delta_str = colstr("%2.2f" % (delta_Fm * 100), 'red')
+            if obj < last_obj:
+                obj_str = colstr("%e" % obj, 'green')
+            else:
+                obj_str = colstr("%e" % obj, 'red')
+            last_obj = obj
+        else:
+            # First model is best model
+            best_Fm = [Fm, i + 1]
+            obj_str = "%e" % obj
+            last_obj = obj
+            delta_str = ""
+            best = ""
+            nn.save(TMP_MODELS)
+        if last_Acc:
+            if last_Acc > cr:
+                acc_str = "Acc " + colstr("%2.2f%%" % (cr * 100), 'red')
+            else:
+                acc_str = "Acc " + colstr("%2.2f%%" % (cr * 100), 'green')
+        else:
+            acc_str = "Acc %2.2f%%" % (cr * 100)
+        last_Acc = cr
+        last_Fm = Fm
+        items = (i + 1, nn.n_epoch, obj_str,
+                 acc_str, Fm * 100, delta_str, best)
+        # logging.info("Epoch %2d/%2d: %s %s Fm %2.2f%% %s%s" % items)
+        # if args.log is not None:
+        #     logging.info("%s,%.3f,%.3f" % (i + 1, cr, Fm))
+        # else:
+        #print "Epoch %2d/%2d: %s %s Fm %2.2f%% %s%s" % items
+        if not silent:
+            print "%s Fm %2.2f%% %s%s" % items[3:]
+
+    #load best model
+    nn.load(TMP_MODELS)
+    return nn
+
+class NLSE():
     '''
     Embedding subspace
     '''
-    def __init__(self, E, sub_size, model_file=None, weight_CM=None,
-                 init=None):
+    def __init__(self, E, sub_size, lrate, n_epoch=10, randomize_train=True, weight_CM=None, rand_seed=1234, init=None):
         # Random Seed
-        if init is None:
-            rng = np.random.RandomState(1234)        
-        else:
-            rng = np.random.RandomState(init)        
-        if model_file:
-            # Check conflicting parameters given 
-            # if emb_path is not None or sub_size is not None:
-            #     raise EnvironmentError, ("When loading a model emb_path and "
-            #                              "sub_size must be set to None")
-            # Load pre existing model  
-            with open(model_file, 'rb') as fid: 
-                [E, S, C, emb_path] = cPickle.load(fid)
-            E             = theano.shared(E, borrow=True)
-            S             = theano.shared(S, borrow=True)
-            C             = theano.shared(C, borrow=True)
-            # self.emb_path = emb_path
-        else:
-            # Embeddings e.g. word2vec.   
-            # with open(emb_path, 'rb') as fid:
-            #     E = cPickle.load(fid).astype(theano.config.floatX)
-            emb_size, voc_size = E.shape
-            # This is fixed!
-            E = theano.shared(E, borrow=True)
-            # Embedding subspace projection
-            S = init_W((sub_size, emb_size), rng, init=0.1) # 0.0991
-            # Hidden layer
-            C = init_W((3, sub_size), rng, init=0.7) # 0.679
-            # Store the embedding path used
-            # self.emb_path = emb_path
-
-        # Fixed parameters
+        self.rng = np.random.RandomState(rand_seed)        
+        
+        emb_size = E.shape[0]
+        # Embedding Layer
+        E = theano.shared(E, borrow=True)
+        # Embedding subspace projection
+        S = init_W((sub_size, emb_size), self.rng, init=init) # 0.0991
+        # Hidden layer
+        C = init_W((3, sub_size), self.rng, init=init) # 0.679        
         self.params = [E, S, C]
+        self.lrate = lrate
+        self.n_epoch = n_epoch
+        self.randomize = randomize_train
         # Compile
         self.compile(weight_CM)
 
@@ -119,6 +244,21 @@ class NN():
         self.y.name  = 'y'
         self.F.name  = 'F'
 
+    def predict(self, X):
+        Y_hat = np.zeros(len(X), dtype='int32')
+        # dev_p_y = np.zeros((3, dev_y.shape[0]))
+        for j, x in enumerate(X):
+            # Prediction
+            x = np.array(x)
+            p_y = self.forward(x)
+            hat_y = np.argmax(p_y)
+            Y_hat[j]=hat_y
+        return Y_hat
+    
+    def fit(self, train_x, train_y, dev_x, dev_y,silent=False):
+        nn = train_nlse(self,train_x, train_y, dev_x, dev_y,silent)
+        self.params = nn.params
+
     def save(self, model_file):
         #create output folder if needed
         if not os.path.exists(os.path.dirname(model_file)):
@@ -135,11 +275,6 @@ class NN():
             S = theano.shared(S, borrow=True)
             C = theano.shared(C, borrow=True)
         self.params = [E, S, C]
-
-
-
-
-
 
 
 

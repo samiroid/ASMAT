@@ -22,7 +22,7 @@ def run(inputs, opts):
 			basename = os.path.splitext(os.path.basename(dataset))[0]			
 			if opts.bow is not None:
 				for agg in opts.bow:
-					fname = basename + "_BOW_" + agg
+					fname = basename + "-BOW-" + agg.upper()
 					print "\t > BOW ({})".format(fname)
 					bow = features.BOW(X, vocabulary, agg=agg)
 					np.save(opts.out_folder + fname, bow)
@@ -30,7 +30,7 @@ def run(inputs, opts):
 					# print len(X), bow.shape
 			if opts.boe is not None:
 				for agg in opts.boe:
-					fname = basename + "_BOE_" + agg
+					fname = basename + "-BOE-" + agg.upper()
 					print "\t > BOE ({})".format(fname)
 					E, _ = embeddings.read_embeddings(opts.embeddings, wrd2idx=vocabulary)
 					boe = features.BOE(X, E, agg=agg)
@@ -38,11 +38,12 @@ def run(inputs, opts):
 					np.save(opts.out_folder + fname, boe)
 			if opts.nlse:
 				fname = basename + "_NLSE.pkl"
-				X, Y, st, ed = features.NLSE(X, Y)
+				# X, Y, st, ed = features.NLSE(X, Y)
 				E, _ = embeddings.read_embeddings(opts.embeddings, wrd2idx=vocabulary)
-				with open(opts.out_folder + fname, "w") as fod:
-					cPickle.dump([X, Y, vocabulary, label_map, E, st, ed],
-					             fod, cPickle.HIGHEST_PROTOCOL)
+				np.save(fname, E)
+				# with open(opts.out_folder + fname, "w") as fod:
+				# 	cPickle.dump([X, Y, vocabulary, label_map, E, st, ed],
+				# 	             fod, cPickle.HIGHEST_PROTOCOL)
 
 
 def get_parser():

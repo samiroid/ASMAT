@@ -36,30 +36,46 @@ echo "LINEAR SMA > " $DATASET
 #OPTIONS
 CLEAN=0
 SPLIT=0
-EXTRACT=1
-GET_FEATURES=1
+EXTRACT=0
+GET_FEATURES=0
 LINEAR=1
 
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
-	rm -rf $FEATURES/*.* || True
-	rm -rf $MODELS/*.* || True
-	rm -rf $DATA/*.* || True	
+	rm -rf $BASE || True
 fi
+
 ### DATA SPLIT ###
+# if (($SPLIT > 0)); then
+# 	echo $RED"##### SPLIT DATA #####"$COLOR_OFF
+# 	#first split the data into 80-20 split (temp/test)
+# 	#then split the temp data into 80-20 split (train/dev)
+# 	INPUT=$PROJECT_PATH"/datasets/"$DATASET".txt"
+# 	python ASMAT/toolkit/dataset_splitter.py -input $INPUT \
+# 											 -output $DATA"/"$DATASET"_tmp" $DATA"/"$DATASET"_test" \
+# 											 -rand_seed $RUN_ID 
+# 	python ASMAT/toolkit/dataset_splitter.py -input $DATA"/"$DATASET"_tmp" \
+# 											 -output $DATA"/"$DATASET"_train" $DATA"/"$DATASET"_dev" \
+# 											 -rand_seed $RUN_ID
+# 	rm -rf $DATA"/"$DATASET"_tmp"
+# fi
+
 if (($SPLIT > 0)); then
 	echo $RED"##### SPLIT DATA #####"$COLOR_OFF
 	#first split the data into 80-20 split (temp/test)
 	#then split the temp data into 80-20 split (train/dev)
 	INPUT=$PROJECT_PATH"/datasets/"$DATASET".txt"
 	python ASMAT/toolkit/dataset_splitter.py -input $INPUT \
-											 -output $DATA"/"$DATASET"_tmp" $DATA"/"$DATASET"_test" \
+											 -train $DATA"/"$DATASET"_train" \
+											 -test $DATA"/"$DATASET"_test" \
+											 -dev $DATA"/"$DATASET"_dev" \
 											 -rand_seed $RUN_ID 
-	python ASMAT/toolkit/dataset_splitter.py -input $DATA"/"$DATASET"_tmp" \
-											 -output $DATA"/"$DATASET"_train" $DATA"/"$DATASET"_dev" \
-											 -rand_seed $RUN_ID
-	rm -rf $DATA"/"$DATASET"_tmp"
+	# python ASMAT/toolkit/dataset_splitter.py -input $DATA"/"$DATASET"_tmp" \
+	# 										 -output $DATA"/"$DATASET"_train" $DATA"/"$DATASET"_dev" \
+	# 										 -rand_seed $RUN_ID
+	# rm -rf $DATA"/"$DATASET"_tmp"
 fi
+
 ### INDEX EXTRACTION ###
 if (($EXTRACT > 0)); then
 	echo $RED"##### EXTRACT INDEX #####"$COLOR_OFF
@@ -81,16 +97,28 @@ fi
 ### LINEAR MODELS ###
 if (($LINEAR > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF
-	python ASMAT/models/linear_model.py -features BOW_bin \
+	# python ASMAT/models/linear_model.py -features BOW_bin \
+	# 									-train $FEATURES"/"$TRAIN \
+	# 						  			-test $FEATURES"/"$TEST \
+	# 									-dev $FEATURES"/"$DEV \
+	# 						 			-res_path $RESULTS \
+	# 									-hyperparams $HYPERPARAMS \
+	
+	python ASMAT/models/linear_model.py -features BOW-bin \
 										-train $FEATURES"/"$TRAIN \
 							  			-test $FEATURES"/"$TEST \
 										-dev $FEATURES"/"$DEV \
 							 			-res_path $RESULTS
-										 # -hyperparams $HYPERPARAMS \
-							 
-	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-							 -features BOW_freq -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS
+	
+	python ASMAT/models/linear_model.py -features naive_bayes \
+										-train $FEATURES"/"$TRAIN \
+							  			-test $FEATURES"/"$TEST \
+										-dev $FEATURES"/"$DEV \
+							 			-res_path $RESULTS										 	
+	
+	# python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
+	# 						 -features BOW_freq -test $FEATURES"/"$TEST \
+	# 						 -res_path $RESULTS
 	
 	
 fi

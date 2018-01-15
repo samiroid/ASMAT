@@ -19,9 +19,10 @@ fi
 
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments"
 BASE=$PROJECT_PATH"/sma/neural/"$DATASET
-RESULTS=$PROJECT_PATH"/sma/results/"$DATASET".txt"
+#RESULTS=$PROJECT_PATH"/sma/results/"$DATASET".txt"
 RESULTS=$PROJECT_PATH"/sma/results/lowres_sma.txt"
 HYPERPARAMS=$PROJECT_PATH"/confs/default.cfg"
+NLSE_HYPERPARAMS=$PROJECT_PATH"/confs/nlse.cfg"
 
 #create folders
 mkdir -p $BASE
@@ -38,21 +39,40 @@ FILTERED_EMBEDDINGS=$FEATURES"/str_skip_50.txt"
 
 #OPTIONS
 CLEAN=0
-SPLIT=1
-EXTRACT=1
-GET_FEATURES=1
+SPLIT=0
+EXTRACT=0
+GET_FEATURES=0
 LINEAR=1
-NLSE=0
+NLSE=1
 
 echo "NEURAL SMA > " $DATASET
 
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
-	rm -rf $FEATURES/*.* || True
-	rm -rf $MODELS/*.* || True
-	rm -rf $DATA/*.* || True
-	rm $RESULTS/*.* || True
+	rm -rf $BASE || True
 fi
+
+# if (($CLEAN > 0)); then
+# 	echo "CLEAN-UP!"
+# 	rm -rf $FEATURES/*.* || True
+# 	rm -rf $MODELS/*.* || True
+# 	rm -rf $DATA/*.* || True	
+# fi
+
+# ### DATA SPLIT ###
+# if (($SPLIT > 0)); then
+# 	echo $RED"##### SPLIT DATA #####"$COLOR_OFF
+# 	#first split the data into 80-20 split (temp/test)
+# 	#then split the temp data into 80-20 split (train/dev)
+# 	INPUT=$PROJECT_PATH"/datasets/"$DATASET".txt"
+# 	python ASMAT/toolkit/dataset_splitter.py -input $INPUT \
+# 											 -output $DATA"/"$DATASET"_tmp" $DATA"/"$DATASET"_test" \
+# 											 -rand_seed $RUN_ID &&
+# 	python ASMAT/toolkit/dataset_splitter.py -input $DATA"/"$DATASET"_tmp" \
+# 											 -output $DATA"/"$DATASET"_train" $DATA"/"$DATASET"_dev" \
+# 											 -rand_seed $RUN_ID
+# 	rm -rf $DATA"/"$DATASET"_tmp"
+# fi
 
 ### DATA SPLIT ###
 if (($SPLIT > 0)); then
@@ -61,12 +81,14 @@ if (($SPLIT > 0)); then
 	#then split the temp data into 80-20 split (train/dev)
 	INPUT=$PROJECT_PATH"/datasets/"$DATASET".txt"
 	python ASMAT/toolkit/dataset_splitter.py -input $INPUT \
-											 -output $DATA"/"$DATASET"_tmp" $DATA"/"$DATASET"_test" \
-											 -rand_seed $RUN_ID &&
-	python ASMAT/toolkit/dataset_splitter.py -input $DATA"/"$DATASET"_tmp" \
-											 -output $DATA"/"$DATASET"_train" $DATA"/"$DATASET"_dev" \
-											 -rand_seed $RUN_ID
-	rm -rf $DATA"/"$DATASET"_tmp"
+											 -train $DATA"/"$DATASET"_train" \
+											 -test $DATA"/"$DATASET"_test" \
+											 -dev $DATA"/"$DATASET"_dev" \
+											 -rand_seed $RUN_ID 
+	# python ASMAT/toolkit/dataset_splitter.py -input $DATA"/"$DATASET"_tmp" \
+	# 										 -output $DATA"/"$DATASET"_train" $DATA"/"$DATASET"_dev" \
+	# 										 -rand_seed $RUN_ID
+	# rm -rf $DATA"/"$DATASET"_tmp"
 fi
 
 
@@ -90,38 +112,46 @@ if (($GET_FEATURES > 0)); then
 							-out_folder $FEATURES \
 							-boe bin sum \
 							-embeddings $FILTERED_EMBEDDINGS	
-	
-	python ASMAT/toolkit/features.py -input $FEATURES"/"$TRAIN \
-							-out_folder $FEATURES \
-							-nlse \
-							-embeddings $FILTERED_EMBEDDINGS	
 fi
 
 ### LINEAR MODELS ###
 if (($LINEAR > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF
 	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-							 -features BOE_bin -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS
-	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-							 -features BOE_sum -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS
-	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN \
-							 -features BOE_bin BOE_sum -test $FEATURES"/"$TEST \
-							 -res_path $RESULTS
+								-dev $FEATURES"/"$DEV \
+							 -features BOE-BIN -test $FEATURES"/"$TEST \
+							 -res_path $RESULTS \
+							 -hyperparams $HYPERPARAMS
+	python ASMAT/models/linear_model.py -train $FEATURES"/"$TRAIN -dev $FEATURES"/"$DEV \
+							 -features BOE-SUM -test $FEATURES"/"$TEST \
+							 -res_path $RESULTS \
+							 -hyperparams $HYPERPARAMS
+	
 fi
 
 # ### NLSE #####
 if (($NLSE > 0)); then
 	echo $RED"##### NLSE ##### "$COLOR_OFF
-	python ASMAT/models/train_nlse.py -tr $FEATURES"/"$TRAIN"_NLSE.pkl" \
+	python ASMAT/models/train_nlse.py -tr $FEATURES"/"$TRAIN \
 							   		   -dev $FEATURES"/"$DEV \
                            	   		   -ts $FEATURES"/"$TEST \
                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
                            	   		   -emb $FILTERED_EMBEDDINGS \
                                		   -run_id "NLSE" \
-                           	   		   -res_path $RESULTS
+                           	   		   -res_path $RESULTS \
 									   -sub_size 5 \
 									   -lrate 0.05 \
-									   -n_epoch 5
+									   -n_epoch 5 \
+									   -hyperparams $NLSE_HYPERPARAMS
+	
+	# python ASMAT/models/train_nlse.py -tr $FEATURES"/"$TRAIN"_NLSE.pkl" \
+	# 						   		   -dev $FEATURES"/"$DEV \
+    #                        	   		   -ts $FEATURES"/"$TEST \
+    #                        	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
+    #                        	   		   -emb $FILTERED_EMBEDDINGS \
+    #                            		   -run_id "NLSE" \
+    #                        	   		   -res_path $RESULTS
+	# 								   -sub_size 5 \
+	# 								   -lrate 0.05 \
+	# 								   -n_epoch 5
 fi

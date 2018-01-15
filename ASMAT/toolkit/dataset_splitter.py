@@ -10,8 +10,11 @@ from ASMAT.lib.helpers import str2seed
 
 def get_parser():
 	par = argparse.ArgumentParser(description="Split Dataset")
-	par.add_argument('-input', type=str, required=True, help='input data')
-	par.add_argument('-output', type=str, required=True, nargs=2, help='output files')
+	par.add_argument('-input', type=str, required=True, nargs='+', help='input data')
+	par.add_argument('-train', type=str, required=True, help='train split path')
+	par.add_argument('-test', type=str, required=True, help='test split path')
+	par.add_argument('-dev', type=str, help='dev split path')
+	# par.add_argument('-output', type=str, required=True, nargs=2, help='output files')
 	par.add_argument('-split', type=float, default=0.8, help='data split')
 	par.add_argument('-no_strat', action="store_true", help="do not stratified data for split")
 	par.add_argument('-rand_seed', type=str, default="1234", help='randomization seed')
@@ -25,31 +28,44 @@ if __name__ == "__main__":
 		seed = int(args.rand_seed)
 	except ValueError:		
 		seed = str2seed(args.rand_seed)	
-	data = data_reader.read_dataset(args.input)	
-	fname_1 = args.output[0]
-	fname_2 = args.output[1]
+	datasets = [data_reader.read_dataset(d)	for d in args.input]
+	datasets = data_reader.flatten_list(datasets)	
 	if args.cv is not None:
 		print "[seed ({}) | input: {} | cv: {} | strat: {}]".format(seed, args.input, \
 																	args.cv, \
 																	not args.no_strat)
-		folds = data_reader.crossfolds(data, args.cv)
+		folds = data_reader.crossfolds(datasets, args.cv)
 		# set_trace()
-		for i, (train, test) in enumerate(folds):
-			tr_fname = fname_1+"_"+str(i+1)
-			ts_fname = fname_2+"_"+str(i+1)
-			print "[saving: {} | {} ]".format(tr_fname, ts_fname)				
-			data_reader.save_dataset(train, tr_fname)
-			data_reader.save_dataset(test, ts_fname)			
+		for i, (train_split, test_split) in enumerate(folds):
+			tr_fname = args.train+"_"+str(i+1)
+			ts_fname = args.test+"_"+str(i+1)
+			if args.dev is not None:
+				dev_fname = args.dev+"_"+str(i+1)
+				print "[saving: {} | {} | {} ]".format(tr_fname, ts_fname, dev_fname)	
+				train_split, dev_split = data_reader.shuffle_split(train_split, args.split, \
+																random_seed=seed)	
+				# set_trace()
+				data_reader.save_dataset(dev_split, dev_fname)
+			else:
+				print "[saving: {} | {} ]".format(tr_fname, ts_fname)				
+			# set_trace()
+			data_reader.save_dataset(train_split, tr_fname)
+			data_reader.save_dataset(test_split, ts_fname)			
 	else:		
-		assert len(args.output) == 2, "please specify two output files"
 		print "[seed ({}) | input: {} | split: {} | strat: {}]".format(seed, args.input, \
 																	args.split, \
 																	not args.no_strat)
-		if args.no_strat:
-			data_1, data_2 = data_reader.simple_split(data, args.split, random_seed=seed)
+		# if args.no_strat:
+		# 	data_1, data_2 = data_reader.simple_split(data, args.split, random_seed=seed)
+		# else:
+		train_split, test_split = data_reader.shuffle_split(datasets, args.split, \
+															random_seed=seed)	
+		if args.dev is not None:
+			print "[saving: {} | {} | {} ]".format(args.train, args.test, args.dev)	
+			train_split, dev_split = data_reader.shuffle_split(train_split, args.split, \
+															  random_seed=seed)	
+			data_reader.save_dataset(dev_split, args.dev)
 		else:
-			data_1, data_2 = data_reader.shuffle_split(data, args.split, random_seed=seed)
-	
-		print "[saving: {} | {} ]".format(fname_1, fname_2)	
-		data_reader.save_dataset(data_1, fname_1)
-		data_reader.save_dataset(data_2,fname_2)
+			print "[saving: {} | {} ]".format(args.train, args.test)	
+		data_reader.save_dataset(train_split, args.train)
+		data_reader.save_dataset(test_split, args.test)

@@ -2,27 +2,27 @@ import argparse
 from collections import defaultdict
 import cPickle
 from ipdb import set_trace
-import itertools
 import numpy as np
 import os
 from sklearn.linear_model import SGDClassifier 
+from sklearn.naive_bayes import BernoulliNB
 from sklearn.metrics import f1_score, accuracy_score
 import sys
 sys.path.append("..")
 from ASMAT.lib import helpers
-import json 
 
-def get_features(data_path, features_path):	
+
+def get_features(data_path, features):	
 	with open(data_path) as fid:
 		train_data = cPickle.load(fid)
 		X = None
 		Y = np.array(train_data[1])		
 		#remove extension from filename
 		data_path = os.path.splitext(data_path)[0]
-		fname = os.path.basename(data_path)
+		# fname = os.path.basename(data_path)
 		#get features
-		for ft in args.features:			
-			feat_suffix = "_"+ft+".npy" 		
+		for ft in features:			
+			feat_suffix = "-"+ft+".npy" 		
 			# print "[reading feature @ {}]".format(fname+feat_suffix)
 			x = np.load(data_path+feat_suffix)
 			if X is None: 
@@ -31,14 +31,10 @@ def get_features(data_path, features_path):
 				X = np.concatenate((X,x),axis=1)
 	return X, Y
 
-def hypertune(train, dev, features, obj, confs_path, resp_path=None):
+def hypertune(train, dev, features, obj, confs_path, res_path=None):
 	X_train, Y_train = get_features(train, features)
-	X_dev,  Y_dev  = get_features(dev, features)	
-	confs = json.load(open(confs_path, 'r'))
-	params = confs.keys()
-	choices = confs.values()
-	combs = list(itertools.product(*choices))
-	hyperparams =  [{k:v for k,v in zip(c,x)} for x, c in zip(combs, [params]*len(combs))]
+	X_dev,  Y_dev  = get_features(dev, features)		
+	hyperparams = helpers.parse_hyperparams(confs_path)
 	best_hp = None
 	best_score = 0
 	for hp in hyperparams:
@@ -47,55 +43,49 @@ def hypertune(train, dev, features, obj, confs_path, resp_path=None):
 		model.fit(X_train,Y_train)
 		Y_hat = model.predict(X_dev)
 		score = obj(Y_dev, Y_hat)
-		print "[hyperparameters: {} | score: {}]".format(repr(hp), score)
+		# print "[score: {} | hyperparameters: {}]".format(score, repr(hp))
 		if score > best_score:
 			best_score = score
 			best_hp = hp
+		results = {"score":round(score,3), "hyper":repr(hp)}
+		if res_path is not None:
+			helpers.save_results(results,res_path)
+		helpers.print_results(results)
 	print ""
 	print "[best conf: {} | score: {}]".format(repr(best_hp),best_score)
 	return best_hp, best_score
 
-		# #avgF1 = f1_score(Y_dev, Y_hat,average="macro") 		
-		# acc = accuracy_score(Y_dev, Y_hat)				
-		# fname = os.path.basename(test)		
-		# results = {"acc":round(acc,3),
-		# 		"avgF1":round(avgF1,3),			   
-		# 		"features":"+".join(features),
-		# 		"dataset":fname,
-		# 		"run_id":run_id,
-		# 		"train_size":len(X_train),
-		# 		"test_size":len(X_dev),
-		# 		"hyper":repr(hp)}
-		# cols = ["dataset", "run_id", "hyper", "acc", "avgF1"]
-		# helpers.print_results(results, columns=cols)
-		# if res_path is not None:
-		# 	cols = ["dataset", "run_id", "features", "hyper", "acc", "avgF1"]
-		# 	helpers.save_results(results, res_path, columns=results.keys())
-
-def run(train, test, run_id, features, hyperparameters={}, res_path=None):
-	X_train, Y_train = get_features(train, features)
-	X_test,  Y_test  = get_features(test, features)	
+def main(train, test, run_id, features, hyperparameters={}, res_path=None):	
 	#train and evalute model	
-	#initialize model with the hyperparameters	
-	model = SGDClassifier(random_state=1234,**hyperparameters)
+	if features[0] == "naive_bayes":
+		X_train, Y_train = get_features(train, ["BOW-BIN"])
+		X_test,  Y_test  = get_features(test, ["BOW-BIN"])	
+		model = BernoulliNB()
+		model_name = "NaiveBayes"
+	else:
+		X_train, Y_train = get_features(train, features)
+		X_test,  Y_test  = get_features(test, features)	
+		#initialize model with the hyperparameters	
+		model = SGDClassifier(random_state=1234,**hyperparameters)
+		model_name = "+".join(features)
 	model.fit(X_train,Y_train)
 	Y_hat = model.predict(X_test)
 	avgF1 = f1_score(Y_test, Y_hat,average="macro") 		
-	acc = accuracy_score(Y_test, Y_hat)				
-	fname = os.path.basename(test)		
-	results = {"acc":round(acc,3),
-			"avgF1":round(avgF1,3),			   
-			"features":"+".join(features),
-			"dataset":fname,
-			"run_id":run_id,
-			"train_size":len(X_train),
-			"test_size":len(X_test),
+	acc = accuracy_score(Y_test, Y_hat)					
+	results = {"acc":round(acc,3), \
+			"avgF1":round(avgF1,3),	\
+			"model":model_name, \
+			"dataset":os.path.basename(test), \
+			"run_id":run_id, \
+			"train_size":len(X_train), \
+			"test_size":len(X_test), \
 			"hyper":repr(hyperparameters)}
 	cols = ["dataset", "run_id", "acc", "avgF1","hyper"]
 	helpers.print_results(results, columns=cols)
 	if res_path is not None:
-		cols = ["dataset", "run_id", "features", "acc", "avgF1", "hyper"]
+		cols = ["dataset", "run_id", "model", "acc", "avgF1", "hyper"]
 		helpers.save_results(results, res_path, columns=cols)
+	return results
 		
 def get_parser():
 	par = argparse.ArgumentParser(description="Document Classifier")
@@ -122,30 +112,62 @@ if __name__=="__main__":
 	#train	
 	print "[features: {}]".format("+".join(args.features))
 	if args.run_id is None: args.run_id = "+".join(args.features)		
+	hyper_results_path = None
 	if len(args.hyperparams) > 0: 
 		assert args.dev is not None, "Need a dev set for hyperparameter search"
-	#loop through cross-validation folds (if any)
+		if args.res_path is not None:
+			fname, _ = os.path.splitext(args.res_path)
+			hyper_results_path = fname+"_"+os.path.basename(args.test)+"_hyper.txt"		
+	
+	
 	if args.cv is None:			
-		if len(args.hyperparams) > 0:
+		if len(args.hyperparams) > 0:			
 			print "[tuning hyperparameters from @ {}]".format(args.hyperparams)
+			scorer = lambda y_true,y_hat: f1_score(y_true, y_hat,average="macro") 		
 			best_hyper, _ = hypertune(args.train, args.dev, args.features, \
-									accuracy_score, args.hyperparams)
+									scorer, args.hyperparams, res_path=hyper_results_path)
 		else:
 			best_hyper = {}
 		#run model with the best hyperparams
-		run(args.train, args.test, args.run_id, args.features, best_hyper, args.res_path)
+		main(args.train, args.test, args.run_id, args.features, best_hyper, args.res_path)
 	else:
 		assert args.cv > 2, "need at leat 2 folds for cross-validation"
+		results = []
+		cv_results_path = None
+		if args.res_path is not None:
+			#in CV experiments save the results of each fold in an external file
+			fname, _ = os.path.splitext(args.res_path)
+			cv_results_path = fname+"_"+os.path.basename(args.test)+"_CV.txt"		
+		#loop through cross-validation folds
 		for cv_fold in xrange(1, args.cv+1):
-			if len(args.hyperparams) > 0:
+			if len(args.hyperparams) > 0:				
 				print "[tuning hyperparameters from @ {}]".format(args.hyperparams)
+				scorer = lambda y_true,y_hat: f1_score(y_true, y_hat,average="macro") 		
 				best_hyper, _ = hypertune(args.train, args.dev, args.features, \
-										f1_score, args.hyperparams)
+										scorer, args.hyperparams, res_path=hyper_results_path)
 			else:
 				best_hyper = {}
+			print cv_results_path
 			#run model with the best hyperparams
-			run(args.train+"_"+str(cv_fold), args.test+"_"+str(cv_fold), \
-				args.run_id+"_"+str(cv_fold), args.features, best_hyper, args.res_path)
+			res = main(args.train+"_"+str(cv_fold), args.test+"_"+str(cv_fold), \
+				args.run_id+"_"+str(cv_fold), args.features, best_hyper, cv_results_path)
+			results.append(res)
+		
+		accs = [res["acc"] for res in results ]
+		f1s = [res["avgF1"] for res in results ]
+		
+		cv_res = {"acc_mean":round(np.mean(accs),3), \
+				"acc_std":round(np.std(accs),3), \
+				"avgF1_mean":round(np.mean(f1s),3), \
+				"avgF1_std":round(np.std(f1s),3), \
+				"model":"+".join(args.features), \
+				"dataset":os.path.basename(args.test), \
+				"run_id":args.run_id}
+		helpers.print_results(cv_res)
+		#save the results of each run 
+		if args.res_path is not None:
+			cols = ["dataset", "run_id", "model", "acc_mean","acc_std","avgF1_mean","avgF1_std"]
+			helpers.save_results(cv_res, args.res_path, columns=cols)
 			
 
 

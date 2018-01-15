@@ -31,7 +31,7 @@ def vectorize(dataset, vocabulary, idx_labels=True):
 		Y = [float(l) for l in labels]
 	return X, Y, label2idx
 
-def run(fnames, vocab, opts):
+def main(fnames, vocab, opts):
 	#read data
 	datasets = []
 	for fname in fnames:
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 			vocabulary = get_vocabulary(args.vocab_from, args.vocab_size)
 		else:
 			vocabulary = get_vocabulary([args.input[0]], args.vocab_size)
-		run(all_fnames, vocabulary, args)
+		main(all_fnames, vocabulary, args)
 	else:
 		assert args.cv > 2, "need at leat 2 folds for cross-validation"
 		for cv_fold in xrange(1, args.cv+1):
@@ -99,7 +99,7 @@ if __name__ == "__main__":
 			else:
 				vocabulary = get_vocabulary([args.cv_fnames[0]], args.vocab_size)
 
-			run(cv_fnames, vocabulary, args)						
+			main(cv_fnames, vocabulary, args)						
 			
 	#extract embeddings
 	if args.embeddings is not None:
