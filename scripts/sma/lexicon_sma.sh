@@ -23,7 +23,9 @@ else
 fi
 
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments"
-BASE=$PROJECT_PATH"/lexicon_sma/"$DATASET
+BASE=$PROJECT_PATH"/sma/lexicon/"$DATASET
+# BASE=$PROJECT_PATH"/lexicon_sma/"$DATASET
+HYPERPARAMS=$PROJECT_PATH"/confs/lexicon.cfg"
 
 #create folders
 mkdir -p $BASE
@@ -42,35 +44,37 @@ TEST=$DATASET"_test"
 # LEXICON=$LEXICONS_PATH$LEX_NAME
 
 LEXICON=$PROJECT_PATH"/lexicons/"$LEX_NAME
+
 echo "LEXICON SMA > " $DATASET "@" $LEXICON
 
 
-
+# OPTIONS
 CLEAN=0
+SPLIT=0
+
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
-#	rm -rf $FEATURES/*.* || True
-	rm -rf $MODELS/*.* || True
-	rm -rf $DATA/*.* || True
-	rm $RESULTS/*.* || True
+	rm -rf $BASE || True
 fi
+
 
 ### DATA SPLIT ###
-SPLIT=0
+
 if (($SPLIT > 0)); then
-	echo $RED"##### SPLIT DATA #####"$COLOR_OFF
-	#first split the data into 80-20 split (temp/test)
-	#then split the temp data into 80-20 split (train/dev)
+	echo $RED"##### SPLIT DATA #####"$COLOR_OFF	
 	INPUT=$PROJECT_PATH"/datasets/"$DATASET".txt"
 	python ASMAT/toolkit/dataset_splitter.py -input $INPUT \
-											 -output $DATA"/"$DATASET"_tmp" $DATA"/"$DATASET"_test" \
-											 -rand_seed $RUN_ID &&
-	python ASMAT/toolkit/dataset_splitter.py -input $DATA"/"$DATASET"_tmp" \
-											 -output $DATA"/"$DATASET"_train" $DATA"/"$DATASET"_dev" \
-											 -rand_seed $RUN_ID
-	rm -rf $DATA"/"$DATASET"_tmp"
+											 -train $DATA"/"$TRAIN \
+											 -test $DATA"/"$TEST \
+											 -dev $DATA"/"$DEV \
+											 -rand_seed $RUN_ID 
+	
 fi
 
-
-python ASMAT/models/lexicon_model.py -lex $LEXICON".txt" -ts $DATA"/"$TEST -res $RESULTS"/"$LEX_NAME".txt" 
+python ASMAT/models/lexicon_sentiment.py -lex $LEXICON".txt" -test_set $DATA"/"$TEST \
+										-dev_set $DATA"/"$DEV \
+									 -res $RESULTS"/"$LEX_NAME".txt" \
+									 -out $RESULTS"/out_"$TEST".txt" \
+									 -model "sum" -norm_scores -confs_path $HYPERPARAMS
+									 
 
