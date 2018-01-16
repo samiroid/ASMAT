@@ -13,114 +13,8 @@ from sklearn.metrics import accuracy_score
 import sys
 sys.path.append("..")
 from ASMAT.lib.data import read_dataset
-from ASMAT.lib import helpers, lexicons
-
-class LexiconSentimentClassifier(object):
-
-	def __init__(self, lexicon=None, path=None, sep='\t', default_word_score=None,				
-				ignore_score_above=float('inf'), ignore_score_below=-float('inf'),positive_threshold=0.5, negative_threshold=None, default_class=1,
-				norm_scores=False, agg="mean"):
-				
-		"""
-		Parameters
-		----------
-		lexicon: dict
-				lexixon
-		path: string
-			 path to a lexicon
-		sep: string
-			separator between words and scores (when loading lexicon from file)
-		ignore_scores: [float, flot]
-			ignore words with scores between these scores 		
-		"""
-		assert path is not None or lexicon is not None, \
-			"Must pass either a lexicon or a path to a lexicon"
-		assert not (path is not None and lexicon is not None), \
-			"Must pass a lexicon or a path to a lexicon (but not both!)"
-		
-		assert agg in ["sum","mean"]
-
-		#load lexicon
-		if path is not None:
-			if norm_scores:				
-				lex = lexicons.read_lexicon(path,sep=sep,normalize=[-1,1])				
-			else:
-				lex = lexicons.read_lexicon(path, sep=sep)
-		else:
-			lex = lexicon
-		assert isinstance(lex, dict), "lexicon must be a dictionary"
-		
-		lex = { wrd: score for wrd, score in lex.items()
-				if  float(score) < ignore_score_above 
-				and float(score) > ignore_score_below }
-
-		#create a default dict to avoid KeyErrors
-		try:
-			default_word_score = float(default_word_score)
-		except:
-			default_word_score = None
-		self.lexicon = defaultdict(lambda:default_word_score,lex)
-		self.positive_threshold = positive_threshold
-		self.negative_threshold = negative_threshold
-		self.default_label = default_class	
-		if agg == "sum":
-			self.agg = np.sum
-		elif agg == "mean":
-			self.agg = np.mean
-			
-	def __predict(self, doc, dbg=False):
-		"""
-			Make a prediction for a single document based on the lexicon
-			This method assumes that the document can be correctly tokenized with white-spaces. 
-
-			Parameters
-			----------
-			doc: string
-				 input document. 
-
-		 	Returns
-			-------
-			numpy.array
-				scores inferred from the lexicon
-				the output will be depend on the paramaters of the model: 
-				``score_sum``, ``score_mean``, ``score_std``
-		"""		
-		word_scores = [self.lexicon[w] for w in doc.split()] 		
-		word_scores = [s for s in word_scores if s is not None]
-		y_hat = self.default_label
-		document_score = None
-		#if no words from the lexicon are found, predict default class
-		if len(word_scores) > 0:
-			document_score = self.agg(word_scores)
-			if document_score > self.positive_threshold:
-				y_hat = 1
-			elif document_score < self.positive_threshold:
-				y_hat = -1
-		if dbg:
-			try:
-				std = round(np.std(word_scores),3)
-			except TypeError:
-				std = None			
-			try:
-				document_score = round(document_score,3)
-			except TypeError:
-				pass
-			return [y_hat, document_score, std, word_scores]
-		return y_hat
-
-	def predict(self, X):		
-		if isinstance(X, unicode):
-			return self.__predict(X)
-		elif isinstance(X, list):
-			predictions = [self.__predict(x) for x in X]
-			return np.array(predictions)
-		else:
-			raise AssertionError("input must be either a string or a list of strings")
-	
-	def debug(self, X):
-		predictions = [self.__predict(x, dbg=True) for x in X]		
-		return predictions
-
+from ASMAT.lib import helpers
+from ASMAT.models.lexicon import LexiconLogOdds
 
 def hypertune(lex_path, test, label_map,  obj, hyperparams, res_path=None):
 	dt = read_dataset(test, labels=label_map.keys())
@@ -130,7 +24,7 @@ def hypertune(lex_path, test, label_map,  obj, hyperparams, res_path=None):
 	best_score = 0
 	for hp in hyperparams:
 		#initialize model with the hyperparameters			
-		model = LexiconSentimentClassifier(path=lex_path,**hp)	
+		model = LexiconLogOdds(path=lex_path,**hp)	
 		Y_hat = model.predict(X)					
 		score = obj(Y, Y_hat)
 		# print "[score: {} | hyperparameters: {}]".format(score, repr(hp))
@@ -151,12 +45,10 @@ def main(lex_path, test, label_map, run_id, hyperparams={}, res_path=None):
 	Y = [label_map[x[0]] for x in dt]
 	print "[configs]"
 	pprint.pprint(hyperparams)
-	model = LexiconSentimentClassifier(path=lex_path,**hyperparams)	
+	model = LexiconLogOdds(path=lex_path,**hyperparams)	
 	Y_hat = model.predict(X)		
 	avgF1 = f1_score(Y, Y_hat,average="macro") 		
 	acc = accuracy_score(Y, Y_hat)				
-	# print "%s ** acc: %.3f | F1: %.3f " % (args.ts, acc, avgF1)
-
 	run_id = args.run_id
 	if run_id is None:
 	    run_id = os.path.splitext(os.path.basename(args.lex))[0]
@@ -179,22 +71,24 @@ def summary(fname,df):
 	print "saving to ", fname
 	df.to_csv(fname,index=False)
 	with open(fname,"a") as fid:
-		avg_score = round(df["score"].mean(),3)
-		std_score = round(df["score"].std(),3)
-		avg_std = round(df["std"].mean(),3)
-		fid.write("\n\navg score:{}\nstd score:{}\navg std:{}\n".format(avg_score, 
-																	std_score,
-																	avg_std))
+		avg_positive = round(df["positive_prob"].mean(),3)
+		avg_negative = round(df["negative_prob"].mean(),3)
+		# std_score = round(df["score"].std(),3)
+		# avg_std = round(df["std"].mean(),3)
+		fid.write("\n\navg positive:{}\navg negative:{}\n".format(avg_positive, 
+																	avg_negative))
 
 def debug(lex_path, test, label_map, conf, report_path):
 	dt = read_dataset(test, labels=label_map.keys())
 	X = [x[1] for x in dt]
 	Y = [label_map[x[0]] for x in dt]
-	model = LexiconSentimentClassifier(path=lex_path,**conf)	
+	model = LexiconLogOdds(path=lex_path,**conf)	
 	z = model.debug(X)		
 	out = [[true_y] + y_hat for true_y, y_hat in zip(Y,z)]	
-	df = pd.DataFrame(out,columns=["y", "y_hat", "score", "std", "word_scores"])
-	df.sort_values("score",inplace=True,ascending=False)	
+	
+	df = pd.DataFrame(out,columns=["y","y_hat", "positive_doc_score", 
+								   "negative_doc_score", "positive_prob", "negative_prob"])
+	df.sort_values("positive_doc_score",inplace=True,ascending=False)	
 	if not os.path.exists(os.path.dirname(report_path)):
 		os.makedirs(os.path.dirname(report_path))
 	#all instances
@@ -242,11 +136,7 @@ if __name__=="__main__":
 	label_map = {args.pos_label: 1, args.neg_label: -1}
 	if args.neut_label is not None: label_map[args.neut_label] = 0	
 
-	default_conf = {"default_word_score":args.default_word_score,
-					"positive_threshold":args.positive_threshold, 
-					"agg":args.model,
-					"norm_scores":args.norm_scores,
-					"default_class":1}
+	default_conf = {}
 	if args.confs_path is not None:
 		confs = json.load(open(args.confs_path, 'r'))
 		#add configurations that are not specified with the default values
@@ -310,33 +200,3 @@ if __name__=="__main__":
 		if args.res_path is not None:
 			cols = ["dataset", "run_id", "model", "acc_mean","acc_std","avgF1_mean","avgF1_std"]
 			helpers.save_results(cv_res, args.res_path, columns=cols)
-			
-
-
-
-
-
-
-
-		# if args.out is not None:
-		# 	with open(args.out,"w") as fod:
-		# 		for s, yh, y, t in zip(scores, Y_hat, Y, X):
-		# 			if yh != y:
-		# 				fod.write("{}\t{}\t{}\n".format(str(s),y,t))
-
-
-
-# with open(test_file) as fid:
-		# 	for l in fid:
-		# 		splt = l.replace("\n","").split("\t")
-		# 		# set_trace()
-		# 		try:
-		# 			y = label_map[splt[0]]
-		# 		except KeyError:
-		# 			pass
-		# 		Y_test.append(y)
-		# 		txt = splt[1]
-		# 		score = model.predict_text_one(txt)[0]
-		# 		if math.isnan(score): score = 0
-		# 		scores.append(score)
-		# 		# print txt, " | ", score
