@@ -6,6 +6,9 @@ import sys
 sys.path.append("..")
 from ASMAT.lib.preprocess import preprocess
 from ASMAT.lib.data import save_dataset, flatten_list
+import codecs 
+
+SEP_EMOJI=False
 
 def omd_hcr(in_path):
 	data = []
@@ -14,7 +17,7 @@ def omd_hcr(in_path):
 		for item in soup.findAll('item'):
 			if item.attrs['label'] in ['positive', 'negative', 'neutral']:
 				msg = item.find("content").text
-				msg = preprocess(msg.decode("utf-8"))
+				msg = preprocess(msg.decode("utf-8"),sep_emoji=SEP_EMOJI)
 				data.append([item.attrs['label'], msg])	
 	return data
 
@@ -33,13 +36,13 @@ def stance(in_path, topic):
 
 def semeval(in_path):
 	data = []
-	with open(in_path, "r") as fid:
+	with codecs.open(in_path, "r","utf-8") as fid:
 		for l in fid:
 			spt = l.replace("\n", "").split("\t")
 			label = spt[0].replace("\"", "")
-			tweet = spt[1].decode("utf-8")
+			tweet = spt[1] #.decode("utf-8")
 			if label in ['positive', 'negative', 'neutral']:
-				tweet = preprocess(tweet).encode("utf-8")
+				tweet = preprocess(tweet,sep_emoji=SEP_EMOJI) #.encode("utf-8")
 				ex = (label, tweet)
 				data.append(ex)
 	return data
@@ -47,17 +50,20 @@ def semeval(in_path):
 def casm(in_path):
 	cache = dict()
 	data = []
-	with open(in_path, "r") as fid:
+	labs = []
+	with codecs.open(in_path, "r","utf-8") as fid:
 		for l in fid:
 			spt = l.split("\t")
 			label = spt[0].split(",")[1]
-			tweet = preprocess(spt[1])
+			tweet = preprocess(spt[1],sep_emoji=SEP_EMOJI)
 			if tweet in cache:
 				continue
 			cache[tweet] = True
 			# print label, tweet
 			ex = [label, tweet]
+			labs.append(label)
 			data.append(ex)
+	print "labels: ", list(set(labs))
 	return data
 
 def get_parser():

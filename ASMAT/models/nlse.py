@@ -186,7 +186,7 @@ def train_nlse(nn, train_x, train_y, dev_x, dev_y,silent):
     nn.load(TMP_MODELS)
     return nn
 
-class NLSE():
+class NLSE(object):
     '''
     Embedding subspace
     '''
