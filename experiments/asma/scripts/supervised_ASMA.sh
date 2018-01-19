@@ -12,16 +12,16 @@ DATASET=$1
 
 if [ -z "$2" ]
   then
-	RUN_ID=$DATASET
-	echo "no RUN ID specified"
+	RESFILE="asma.txt"
+	echo "default results file"
 else
-	RUN_ID=$DATASET"_"$2
+	RESFILE=$2
 fi
 
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/asma"
 DATA=$PROJECT_PATH"/DATA"
-RESULTS=$DATA"/results/asma.txt"
+RESULTS=$DATA"/results/"$RESFILE
 LINEAR_FEATURES=$DATA"/pkl/linear_features"
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
 MODELS=$DATA"/models"
@@ -46,21 +46,8 @@ NLSE=1
 
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
-	rm -rf $PROJECT_PATH"/pkl" || True
+	rm -rf $DATA"/pkl" || True
 fi
-
-
-# if (($SPLIT > 0)); then
-# 	echo $RED"##### SPLIT DATA #####"$COLOR_OFF
-	
-# 	INPUT=$PROJECT_PATH"/input/"$DATASET".txt"
-# 	python ASMAT/toolkit/dataset_splitter.py -input $INPUT \
-# 											 -train $DATA"/"$TRAIN \
-# 											 -test $DATA"/"$TEST \
-# 											 -dev $DATA"/"$DEV \
-# 											 -rand_seed $RUN_ID 
-	
-# fi
 
 ### INDEX EXTRACTION ###
 if (($EXTRACT > 0)); then
@@ -137,5 +124,5 @@ if (($NLSE > 0)); then
                            	   		   -res_path $RESULTS \
 									   -sub_size 5 \
 									   -lrate 0.05 \
-									   -n_epoch 5 
+									   -n_epoch 12 
 fi

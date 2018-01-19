@@ -18,8 +18,8 @@ DATASETS_DST="/Users/samir/Dev/projects/ASMAT/experiments/asma/DATA/txt"
 ####
 
 CLEAN=0
-GET_CASM_SENT=0
-GET_CASM_TOPI=1
+GET_CASM_SENT=1
+GET_CASM_TOPI=0
 
 if (($CLEAN > 0)); then
 	rm -rf $DATASETS_DST
@@ -29,9 +29,7 @@ if (($GET_CASM_SENT > 0)); then
 	sentiment_datasets="boo-cheer cameron-3 clacton clegg debate-1 farage miliband-1 miliband-2"
 	for ds in $sentiment_datasets; 
 	do
-		echo reading $ds
-		# cat $DATASETS_SRC_SENTIMENT"/"$ds"_test.txt"
-		# cat $DATASETS_SRC_SENTIMENT"/"$ds"_training.txt"
+		echo reading $ds		
 
 		python ASMAT/toolkit/dataset_parser.py -format "casm" \
 										-input $DATASETS_SRC"/sentiment/"$ds"_test.txt" \
