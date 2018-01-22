@@ -21,7 +21,10 @@ def BOW(docs, wrd2idx, agg='freq'):
 	assert agg in ["freq", "bin"]
 	X = np.zeros((len(docs), len(wrd2idx)))
 	for i, doc in enumerate(docs):
-		X[i, np.array(doc)] = 1
+		try:
+			X[i, np.array(doc)] = 1
+		except IndexError:
+			pass
 	return X
 
 

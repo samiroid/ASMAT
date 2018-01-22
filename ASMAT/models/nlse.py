@@ -196,6 +196,7 @@ class NLSE(object):
         
         emb_size = E.shape[0]
         # Embedding Layer
+        E = E.astype(theano.config.floatX) 
         E = theano.shared(E, borrow=True)
         # Embedding subspace projection
         S = init_W((sub_size, emb_size), self.rng, init=init) # 0.0991

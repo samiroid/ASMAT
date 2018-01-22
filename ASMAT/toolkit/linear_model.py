@@ -31,10 +31,9 @@ def get_features(data_path, features):
 				X = np.concatenate((X,x),axis=1)
 	return X, Y
 
-def hypertune(train, dev, features, obj, confs_path, res_path=None):
+def hypertune(train, dev, features, obj, hyperparams, res_path=None):
 	X_train, Y_train = get_features(train, features)
-	X_dev,  Y_dev  = get_features(dev, features)		
-	hyperparams = helpers.parse_hyperparams(confs_path)
+	X_dev,  Y_dev  = get_features(dev, features)			 
 	best_hp = None
 	best_score = 0
 	for hp in hyperparams:
@@ -52,7 +51,7 @@ def hypertune(train, dev, features, obj, confs_path, res_path=None):
 			helpers.save_results(results,res_path)
 		helpers.print_results(results)
 	print ""
-	print "[best conf: {} | score: {}]".format(repr(best_hp),best_score)
+	print "[best conf: {} | score: {}]".format(repr(best_hp),round(best_score,3))
 	return best_hp, best_score
 
 def main(train, test, run_id, features, hyperparameters={}, res_path=None):	
@@ -101,7 +100,7 @@ def get_parser():
 	par.add_argument('-neg_label', type=str, default="negative", \
 					help='label for the negative class')
 	par.add_argument('-cv', type=int, help='crossfold')
-	par.add_argument('-hyperparams', type=str, default="", help='path to a dictionary of hyperparameters')
+	par.add_argument('-hyperparams_path', type=str, default="", help='path to a dictionary of hyperparameters')
 
 	return par
 
@@ -113,19 +112,23 @@ if __name__=="__main__":
 	print "[features: {}]".format("+".join(args.features))
 	if args.run_id is None: args.run_id = "+".join(args.features)		
 	hyper_results_path = None
-	if len(args.hyperparams) > 0: 
-		raise NotImplementedError, "Override hyperparameter config with default confs (if do not exist)"
-		assert args.dev is not None, "Need a dev set for hyperparameter search"
-		if args.res_path is not None:
-			fname, _ = os.path.splitext(args.res_path)
-			hyper_results_path = fname+"_"+os.path.basename(args.test)+"_hyper.txt"		
+
+	hyperparams_grid = []
+	if os.path.isfile(args.hyperparams_path):
+		assert args.dev is not None, "Need a dev set for hyperparameter search"		
+		hyperparams_grid = helpers.get_hyperparams(args.hyperparams_path, {})
+		print "[tuning hyperparameters from @ {}]".format(args.hyperparams_path)
+		if args.res_path is not None:            
+			fname, _ = os.path.splitext(args.res_path)            
+			hyper_results_path = fname+"_"+os.path.basename(args.test)+"_hyper.txt"
+		else:
+			hyper_results_path = None
+		scorer = lambda y_true,y_hat: f1_score(y_true, y_hat,average="macro") 	
 			
 	if args.cv is None:			
-		if len(args.hyperparams) > 0:			
-			print "[tuning hyperparameters from @ {}]".format(args.hyperparams)
-			scorer = lambda y_true,y_hat: f1_score(y_true, y_hat,average="macro") 		
+		if len(hyperparams_grid) > 0:	
 			best_hyper, _ = hypertune(args.train, args.dev, args.features, \
-									scorer, args.hyperparams, res_path=hyper_results_path)
+									scorer, hyperparams_grid, res_path=hyper_results_path)
 		else:
 			best_hyper = {}
 		#run model with the best hyperparams
@@ -140,11 +143,9 @@ if __name__=="__main__":
 			cv_results_path = fname+"_"+os.path.basename(args.test)+"_CV.txt"		
 		#loop through cross-validation folds
 		for cv_fold in xrange(1, args.cv+1):
-			if len(args.hyperparams) > 0:				
-				print "[tuning hyperparameters from @ {}]".format(args.hyperparams)
-				scorer = lambda y_true,y_hat: f1_score(y_true, y_hat,average="macro") 		
+			if len(hyperparams_grid) > 0:
 				best_hyper, _ = hypertune(args.train, args.dev, args.features, \
-										scorer, args.hyperparams, res_path=hyper_results_path)
+										scorer, hyperparams_grid, res_path=hyper_results_path)
 			else:
 				best_hyper = {}
 			print cv_results_path
