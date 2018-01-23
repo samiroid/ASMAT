@@ -31,6 +31,24 @@ if (($GET_DATA > 0)); then
 	OMD=$DATASETS_SRC"/debate08"
 	SEMEVAL=$DATASETS_SRC"/semeval_sentiment_raw"	
 	rm -rf $DATASETS_DST	
+	python ASMAT/toolkit/dataset_parser.py -format "omd_hcr" \
+										-input $HCR"/dev.xml" $HCR"/test.xml" $HCR"/train.xml" \
+										-outfolder $DATASETS_DST -outname "HCR.txt" 
+
+	python ASMAT/toolkit/dataset_splitter.py -input $DATASETS_DST"/HCR.txt"  \
+											 -train $DATASETS_DST"/HCR_train" \
+											 -test $DATASETS_DST"/HCR_test" \
+											 -dev $DATASETS_DST"/HCR_dev"		
+
+	python ASMAT/toolkit/dataset_parser.py -format "omd_hcr" \
+										-input $OMD"/dev.xml" $OMD"/test.xml" $OMD"/train.xml" \
+										-outfolder $DATASETS_DST -outname "OMD.txt" 
+
+	python ASMAT/toolkit/dataset_splitter.py -input $DATASETS_DST"/OMD.txt"  \
+											 -train $DATASETS_DST"/OMD_train" \
+											 -test $DATASETS_DST"/OMD_test" \
+											 -dev $DATASETS_DST"/OMD_dev"		
+
 	python ASMAT/toolkit/dataset_parser.py -format "semeval" \
 										-input $SEMEVAL"/Twitter2013_raw.txt" \
 										-outfolder $DATASETS_DST -outname "TW13.txt" 
