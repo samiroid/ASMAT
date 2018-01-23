@@ -67,8 +67,9 @@ def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None):
                 "subsize":hyperparams["sub_size"], \
                 "lrate":hyperparams["lrate"], \
                 "dataset":dataset, \
-                "run_id":run_id}
-    cols = ["dataset", "run_id", "model", "acc", "avgF1"]
+                "run_id":run_id,
+                "hyper":repr(hyperparams)}
+    cols = ["dataset", "run_id", "model", "acc", "avgF1","hyper"]
     helpers.print_results(results,columns=["dataset","run_id","lrate","subsize","acc","avgF1"])
     if res_path is not None:
         helpers.save_results(results, res_path, columns=cols)
@@ -121,7 +122,7 @@ if __name__ == '__main__':
         if len(hyperparams_grid) > 0:				            
             conf, _ = hypertune(args.train, args.dev, args.emb_path,\
                                     scorer, hyperparams_grid, res_path=hyper_results_path)
-        main(args.train, args.dev, args.test, args.emb_path, conf, res_path=args.res_path)
+        main(args.train, args.dev, args.test, args.emb_path, conf, run_id=args.run_id, res_path=args.res_path)
     else:
         assert args.cv > 2, "need at leat 2 folds for cross-validation"
         results = []
@@ -140,8 +141,7 @@ if __name__ == '__main__':
             	conf, _ = hypertune(tr_fname, dev_fname, args.emb_path,\
                                     scorer, hyperparams_grid, res_path=hyper_results_path)            
             #run model with the best hyperparams
-            res = main(tr_fname, dev_fname, ts_fname, args.emb_path, conf,
-                        res_path=cv_results_path)            
+            res = main(tr_fname, dev_fname, ts_fname, args.emb_path, conf, run_id=args.run_id, res_path=cv_results_path)            
             results.append(res)
         
         accs = [res["acc"] for res in results ]

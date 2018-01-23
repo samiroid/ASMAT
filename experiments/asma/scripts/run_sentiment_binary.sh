@@ -16,21 +16,21 @@ done
 
 for ds in $sentiment_datasets; 
 do
-    ./experiments/asma/scripts/neural_ASMA.sh $ds~BINARY sentiment~BINARY.txt str_skip_50.txt
+    ./experiments/asma/scripts/neural_ASMA.sh $ds~BINARY sentiment~BINARY.txt str_skip_50.txt 50D
     echo $ds~BINARY >> "done_sentiment-binary.txt"
 done
 
 # 200-D vectors
 for ds in $sentiment_datasets; 
 do
-    ./experiments/asma/scripts/neural_ASMA.sh $ds~BINARY sentiment200~BINARY.txt str_skip_200.txt
+    ./experiments/asma/scripts/neural_ASMA.sh $ds~BINARY sentiment200~BINARY.txt str_skip_200.txt 200D
     echo $ds~BINARY >> "done_sentiment-binary.txt"
 done
 
 # 400-D vectors
 for ds in $sentiment_datasets; 
 do
-    ./experiments/asma/scripts/neural_ASMA.sh $ds~BINARY sentiment400~BINARY.txt str_skip_400.txt
+    ./experiments/asma/scripts/neural_ASMA.sh $ds~BINARY sentiment400~BINARY.txt str_skip_400.txt 400D
     echo $ds~BINARY >> "done_sentiment-binary.txt"
 done
 

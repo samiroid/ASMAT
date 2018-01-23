@@ -18,6 +18,14 @@ else
 	RESFILE=$2
 fi
 
+if [ -z "$3" ]
+  then
+	RUN_ID="LINEAR"
+	echo "default results file"
+else
+	RUN_ID=$3
+fi
+
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/asma"
 DATA=$PROJECT_PATH"/DATA"
@@ -74,6 +82,7 @@ if (($LINEAR_MODELS > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF	
 	
 	python ASMAT/toolkit/linear_model.py -features BOW-BIN \
+										-run_id $RUN_ID \
 										-train $LINEAR_FEATURES"/"$TRAIN \
 							  			-test $LINEAR_FEATURES"/"$TEST \
 										-dev $LINEAR_FEATURES"/"$DEV \
@@ -82,6 +91,7 @@ if (($LINEAR_MODELS > 0)); then
 										
 
 	python ASMAT/toolkit/linear_model.py -features naive_bayes \
+										-run_id $RUN_ID \
 										-train $LINEAR_FEATURES"/"$TRAIN \
 							  			-test $LINEAR_FEATURES"/"$TEST \
 										-dev $LINEAR_FEATURES"/"$DEV \

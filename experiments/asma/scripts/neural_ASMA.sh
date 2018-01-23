@@ -27,6 +27,15 @@ else
 	echo "embeddings: " $EMB_FILE
 fi
 
+if [ -z "$4" ]
+  then
+	RUN_ID=$EMB_FILE
+	echo "default results file"
+else
+	RUN_ID=$4
+fi
+
+
 
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/asma"
@@ -91,16 +100,21 @@ fi
 if (($LINEAR_MODELS > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF	
 	
-	python ASMAT/toolkit/linear_model.py -train $NEURAL_FEATURES"/"$TRAIN \
-								-dev $NEURAL_FEATURES"/"$DEV \
-							 	-features BOE-BIN -test $NEURAL_FEATURES"/"$TEST \
-							 	-res_path $RESULTS \
-								-hyperparams_path $LINEAR_HYPERPARAMS
+	python ASMAT/toolkit/linear_model.py -features BOE-BIN \
+										-run_id $RUN_ID \
+										-train $NEURAL_FEATURES"/"$TRAIN \
+										-test $NEURAL_FEATURES"/"$TEST \
+										-dev $NEURAL_FEATURES"/"$DEV \
+							 			-res_path $RESULTS \
+										-hyperparams_path $LINEAR_HYPERPARAMS
 							 
-	python ASMAT/toolkit/linear_model.py -train $NEURAL_FEATURES"/"$TRAIN -dev $NEURAL_FEATURES"/"$DEV \
-							 			 -features BOE-SUM -test $NEURAL_FEATURES"/"$TEST \
-							 			 -res_path $RESULTS \
-										 -hyperparams_path $LINEAR_HYPERPARAMS
+	python ASMAT/toolkit/linear_model.py -features BOE-SUM \
+										-run_id $RUN_ID \
+										-train $NEURAL_FEATURES"/"$TRAIN \
+										-test $NEURAL_FEATURES"/"$TEST \
+										-dev $NEURAL_FEATURES"/"$DEV \
+										-res_path $RESULTS \
+										-hyperparams_path $LINEAR_HYPERPARAMS
 	
 fi
 
@@ -112,10 +126,10 @@ if (($NLSE > 0)); then
                            	   		   -test $NEURAL_FEATURES"/"$TEST \
                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
                            	   		   -emb $FILTERED_EMBEDDINGS \
-                               		   -run_id "NLSE" \
+                               		   -run_id $RUN_ID\
                            	   		   -res_path $RESULTS \
 									   -sub_size 5 \
 									   -lrate 0.05 \
-									   -n_epoch 12 \
+									   -n_epoch 20 \
 									   -hyperparams_path $NLSE_HYPERPARAMS
 fi
