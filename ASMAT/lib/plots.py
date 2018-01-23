@@ -22,7 +22,8 @@ MIN_BAR_DIFF = 0.005
 def plot_df(df, ax, x, ys, cols=None, 
             min_y=0, max_y=1, 
             ylabel=None, xlabel=None,
-           rot=0,stacked=False,width=0.8, leg=True):    
+           rot=0,stacked=False,width=0.8, leg=True, 
+           annotation_size=None):    
                
     df.plot(ax=ax,x=x,y=ys,kind="bar",color=cols, ylim=[min_y,max_y],label=ys,legend=True,
             rot=rot,colormap=None,width=width,stacked=stacked)
@@ -45,7 +46,7 @@ def plot_df(df, ax, x, ys, cols=None,
         #skip annotations of similar closeby values
         if abs(dif) < MIN_BAR_DIFF: 
             continue        
-        ax.annotate(str("%.3f" % y)[1:].rstrip('0'), (x * 1.01, y * 1.02),fontsize=16)
+        ax.annotate(str("%.3f" % y)[1:].rstrip('0'), (x * 1.01, y * 1.02),fontsize=annotation_size)
 
     #hide first and last ytick labels
     new_ticks = [x for x in ax.get_yticks() if x>=min_y and x<=max_y][1:-1]

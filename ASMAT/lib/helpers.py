@@ -23,7 +23,7 @@ def str2seed(s):
 	#limit the seed to 9 digits
 	return int(seed[:9])
 
-def save_results(results, path, columns=None):
+def save_results(results, path, columns=None, sep=","):
 
 	if columns is not None:
 		row = [str(results[c]) for c in columns if c in results]
@@ -37,11 +37,11 @@ def save_results(results, path, columns=None):
 
 	if not os.path.exists(path):
 		with open(path, "w") as fod:
-			fod.write(",".join(columns) + "\n")
-			fod.write(",".join(row) + "\n")
+			fod.write(sep.join(columns) + "\n")
+			fod.write(sep.join(row) + "\n")
 	else:
 		with open(path, "a") as fod:
-			fod.write(",".join(row) + "\n")
+			fod.write(sep.join(row) + "\n")
 
 
 def print_results(results, columns=None):
@@ -53,12 +53,14 @@ def print_results(results, columns=None):
 	s = ["{}: {}| ".format(c, r) for c, r in zip(columns, row)]
 	print "** " + "".join(s)
 
-def read_results(path, metric="avgF1", models=None, datasets=None):
+def read_results(path, metric="avgF1", sep=",", run_ids=None, models=None, datasets=None):
 	"""
 		read results:
 		assumes the following columns: dataset, model, [metric]
 	"""
-	c = pd.read_csv(path)		
+	c = pd.read_csv(path,sep=sep)		
+	#filter by run_ids 
+	c = c[c["run_id"].isin(run_ids)]
 	#get datasets 
 	if datasets is not None:
 		c = c[c["dataset"].isin(datasets)]		
@@ -69,6 +71,8 @@ def read_results(path, metric="avgF1", models=None, datasets=None):
 	dt = [[d] + c[c["dataset"]==d][metric].values.tolist() for d in uniq_datasets]
 	dt = dt
 	columns = ["dataset"] + uniq_models	
+
+	# set_trace()
 	df = pd.DataFrame(dt,columns=columns)	
 	if models is not None:
 		#re-order model columns

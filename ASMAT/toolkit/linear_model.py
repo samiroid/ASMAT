@@ -83,7 +83,7 @@ def main(train, test, run_id, features, hyperparameters={}, res_path=None):
 	helpers.print_results(results, columns=cols)
 	if res_path is not None:
 		cols = ["dataset", "run_id", "model", "acc", "avgF1", "hyper"]
-		helpers.save_results(results, res_path, columns=cols)
+		helpers.save_results(results, res_path, sep="\t", columns=cols)
 	return results
 		
 def get_parser():

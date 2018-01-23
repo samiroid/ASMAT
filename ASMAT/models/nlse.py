@@ -90,7 +90,7 @@ def evaluate(model, X, Y):
 
     return avgF1, acc
 
-def train_nlse(nn, train_x, train_y, dev_x, dev_y,silent):    
+def _fit(nn, train_x, train_y, dev_x, dev_y,silent=False):    
     train_x, st, ed = build_input(train_x)
     n_sent_train = len(st)    
     train_y = np.array(train_y)    
@@ -121,6 +121,8 @@ def train_nlse(nn, train_x, train_y, dev_x, dev_y,silent):
     last_Fm = None
     best_Fm = [0, 0]
     last_Acc = None    
+    drops=0
+    
     for i in np.arange(nn.n_epoch):
         # Epoch train
         obj = 0
@@ -143,13 +145,18 @@ def train_nlse(nn, train_x, train_y, dev_x, dev_y,silent):
                 best_Fm = [Fm, i + 1]
                 nn.save(TMP_MODELS)
                 best = '*'
+                drops=0
             else:
                 best = ''
+                drops+=1
             delta_Fm = Fm - last_Fm
             if delta_Fm >= 0:
                 delta_str = colstr("+%2.2f" % (delta_Fm * 100), 'green')
             else:
                 delta_str = colstr("%2.2f" % (delta_Fm * 100), 'red')
+                # if nn.exp_decay:
+                #     nn.lrate*=10**10
+                    # nn.lrate/=2
             if obj < last_obj:
                 obj_str = colstr("%e" % obj, 'green')
             else:
@@ -163,6 +170,7 @@ def train_nlse(nn, train_x, train_y, dev_x, dev_y,silent):
             delta_str = ""
             best = ""
             nn.save(TMP_MODELS)
+
         if last_Acc:
             if last_Acc > cr:
                 acc_str = "Acc " + colstr("%2.2f%%" % (cr * 100), 'red')
@@ -179,8 +187,11 @@ def train_nlse(nn, train_x, train_y, dev_x, dev_y,silent):
         #     logging.info("%s,%.3f,%.3f" % (i + 1, cr, Fm))
         # else:
         #print "Epoch %2d/%2d: %s %s Fm %2.2f%% %s%s" % items
-        if not silent:
+        if not silent:            
             print "%s Fm %2.2f%% %s%s" % items[3:]
+        if drops >= nn.patience:
+            print "[ran out of patience]"
+            break
 
     #load best model
     nn.load(TMP_MODELS)
@@ -190,7 +201,7 @@ class NLSE(object):
     '''
     Embedding subspace
     '''
-    def __init__(self, E, sub_size, lrate, n_epoch=10, randomize_train=True, weight_CM=None, rand_seed=1234, init=None):
+    def __init__(self, E, sub_size, lrate, n_epoch=10, randomize_train=True, weight_CM=None, rand_seed=1234, init='glorot-tanh',patience=None):
         # Random Seed
         self.rng = np.random.RandomState(rand_seed)        
         
@@ -206,8 +217,13 @@ class NLSE(object):
         self.lrate = lrate
         self.n_epoch = n_epoch
         self.randomize = randomize_train
+        
         # Compile
         self.compile(weight_CM)
+        if patience is None:
+            self.patience=float('inf')
+        else:
+            self.patience = patience
 
     def forward(self, x):
         return self.fwd(x.astype('int32'))
@@ -257,7 +273,7 @@ class NLSE(object):
         return Y_hat
     
     def fit(self, train_x, train_y, dev_x, dev_y,silent=False):
-        nn = train_nlse(self,train_x, train_y, dev_x, dev_y,silent)
+        nn = _fit(self,train_x, train_y, dev_x, dev_y,silent)
         self.params = nn.params
 
     def save(self, model_file):

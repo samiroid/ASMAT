@@ -33,7 +33,7 @@ def hypertune(lex_path, test, label_map,  obj, hyperparams, res_path=None):
 			best_hp = hp
 		results = {"score":round(score,3), "hyper":repr(hp)}
 		if res_path is not None:
-			helpers.save_results(results,res_path)
+			helpers.save_results(results,res_path, sep="\t")
 		helpers.print_results(results)
 	print ""
 	print "[best conf: {} | score: {}]".format(repr(best_hp),best_score)
@@ -63,7 +63,7 @@ def main(lex_path, test, label_map, run_id, hyperparams={}, res_path=None):
 	
 	helpers.print_results(results, columns=cols)
 	if res_path is not None:
-		helpers.save_results(results, res_path, columns=cols)
+		helpers.save_results(results, res_path, , sep="\t", columns=cols)
 	
 	return results
 
@@ -201,4 +201,4 @@ if __name__=="__main__":
 		#save the results of each run 
 		if args.res_path is not None:
 			cols = ["dataset", "run_id", "model", "acc_mean","acc_std","avgF1_mean","avgF1_std"]
-			helpers.save_results(cv_res, args.res_path, columns=cols)
+			helpers.save_results(cv_res, args.res_path, sep="\t", columns=cols)

@@ -39,7 +39,7 @@ def hypertune(train, dev, emb_path, obj, hyperparams, res_path=None):
             best_hp = hp
         results = {"score":round(score,3), "hyper":repr(hp)}
         if res_path is not None:
-            helpers.save_results(results,res_path)
+            helpers.save_results(results,res_path, sep="\t")
         helpers.print_results(results)
     print ""
     print "[best conf: {} | score: {}]".format(repr(best_hp),best_score)
@@ -60,19 +60,18 @@ def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None):
     acc = accuracy_score(test_y, y_hat)					        
     run_id = run_id
     dataset = os.path.basename(test)     
+    hp = {p:hyperparams[p] for p in ["sub_size","lrate"]}    
     if run_id is None: run_id = "NLSE"
     results = {"acc":round(acc,3), \
                 "avgF1":round(avgF1,3), \
                 "model":"NLSE", \
-                "subsize":hyperparams["sub_size"], \
-                "lrate":hyperparams["lrate"], \
                 "dataset":dataset, \
                 "run_id":run_id,
-                "hyper":repr(hyperparams)}
+                "hyper":repr(hp)}
     cols = ["dataset", "run_id", "model", "acc", "avgF1","hyper"]
     helpers.print_results(results,columns=["dataset","run_id","lrate","subsize","acc","avgF1"])
     if res_path is not None:
-        helpers.save_results(results, res_path, columns=cols)
+        helpers.save_results(results, res_path, sep="\t", columns=cols)
     return results
 
 def get_argparser():
@@ -94,6 +93,7 @@ def get_argparser():
     parser.add_argument('-neutral_penalty', help='Penalty for neutral cost', default=0.25, type=float)
     parser.add_argument('-hyperparams_path', type=str, default="", help='path to a dictionary of hyperparameters')
     parser.add_argument('-cv', type=int, help='crossfold')
+    parser.add_argument('-patience', type=int, default=10, help='patience')    
     args = parser.parse_args(sys.argv[1:])
     return args
 
@@ -104,7 +104,8 @@ if __name__ == '__main__':
     conf = {"sub_size":args.sub_size, \
             "lrate": args.lrate, \
             "rand_seed": args.rand_seed, 
-            "n_epoch": args.n_epoch }
+            "n_epoch": args.n_epoch,
+            "patience": args.patience}
 
     hyperparams_grid = []
     if os.path.isfile(args.hyperparams_path):
@@ -158,5 +159,5 @@ if __name__ == '__main__':
         #save the results of each run 
         if args.res_path is not None:
             cols = ["dataset", "run_id", "model", "acc_mean","acc_std","avgF1_mean","avgF1_std"]
-            helpers.save_results(cv_res, args.res_path, columns=cols)
+            helpers.save_results(cv_res, args.res_path, sep="\t", columns=cols)
             
