@@ -54,10 +54,10 @@ LINEAR_HYPERPARAMS=$PROJECT_PATH"/confs/linear.cfg"
 
 echo "NEURAL SMA > " $DATASET
 #OPTIONS
-CLEAN=1
-EXTRACT=1
-GET_FEATURES=1
-LINEAR_MODELS=1
+CLEAN=0
+EXTRACT=0
+GET_FEATURES=0
+LINEAR_MODELS=0
 NLSE=1
 HYPERPARAM=1
 if (($CLEAN > 0)); then
@@ -131,5 +131,19 @@ if (($NLSE > 0)); then
 									   -sub_size 5 \
 									   -lrate 0.05 \
 									   -n_epoch 20 \
+									   -patience 8 \
+									   -hyperparams_path $NLSE_HYPERPARAMS
+
+	python ASMAT/toolkit/train_nlse_2.py -train $NEURAL_FEATURES"/"$TRAIN \
+							   		   -dev $NEURAL_FEATURES"/"$DEV \
+                           	   		   -test $NEURAL_FEATURES"/"$TEST \
+                           	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
+                           	   		   -emb $FILTERED_EMBEDDINGS \
+                               		   -run_id $RUN_ID"_2" \
+                           	   		   -res_path $RESULTS \
+									   -sub_size 5 \
+									   -lrate 0.05 \
+									   -n_epoch 20 \
+									   -patience 8 \
 									   -hyperparams_path $NLSE_HYPERPARAMS
 fi
