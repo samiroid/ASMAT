@@ -47,30 +47,10 @@ echo "LEXICON SMA > " $DATASET "@" $LEX_NAME
 
 # OPTIONS
 CLEAN=0
-NO_FIT=1
-FIT=1
 TUNE=1
 if (($CLEAN > 0)); then
 	rm -rf $RESULTS
 fi
-if (($NO_FIT > 0)); then
-echo $RED"##### NO FIT ##### "$COLOR_OFF	
-python ASMAT/toolkit/lexicon_classifier.py -lex $LEXICON".txt" \
-											-run_id $RUN_ID \
-											-test_set $DATA"/txt/"$TEST \
-									 		-res $RESULTS \
-											-confs_path $CONFS											
-fi 
-
-if (($FIT > 0)); then
-echo $RED"##### FIT ##### "$COLOR_OFF	
-python ASMAT/toolkit/lexicon_classifier.py -lex $LEXICON".txt" \
-											-run_id $RUN_ID"-fitted" \
-											-test_set $DATA"/txt/"$TEST \
-											-dev_set $DATA"/txt/"$TRAIN \
-									 		-res $RESULTS \
-											-confs_path $CONFS											
-fi 
 
 if (($TUNE > 0)); then
 echo $RED"##### FIT AND TUNE ##### "$COLOR_OFF	

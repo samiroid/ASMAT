@@ -1,6 +1,6 @@
 import argparse
 import cPickle
-from collections import defaultdict
+from collections import defaultdict, Counter
 from ipdb import set_trace
 import pprint
 import json
@@ -12,15 +12,57 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 import sys
 sys.path.append("..")
-from ASMAT.lib.data import read_dataset, read_lexicon, filter_lexicon
+from ASMAT.lib.data import read_dataset
 from ASMAT.lib import helpers
+
+def filter_lexicon(lexicon, keep_below, keep_above):
+    lex = { wrd: score for wrd, score in lexicon.items()
+            if  float(score) <= keep_below
+            or float(score) >= keep_above }
+    return lex
+
+
+def save_lexicon(lexicon, path, sep='\t'):
+    dirname = os.path.dirname(path)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    with open(path,"w") as fid:
+        for word, score in lexicon.items():
+            fid.write("{}{}{}\n".format(word, sep, float(score)))
+
+def normalize_scores(lexicon, to_range=(0,1)):
+    scores = lexicon.values()
+    old_range = (min(scores),max(scores))
+    for k in lexicon.keys():
+        lexicon[k] = linear_conversion(old_range,to_range,lexicon[k])
+    return lexicon
+
+def linear_conversion(source_range, dest_range, val):
+    MIN = 0
+    MAX = 1
+    val = float(val)
+    source_range = np.asarray(source_range,dtype=float)
+    dest_range = np.asarray(dest_range,dtype=float)
+    new_value = ( (val - source_range[MIN]) / (source_range[MAX] - source_range[MIN]) ) *\
+                (dest_range[MAX] - dest_range[MIN]) + dest_range[MIN]
+    return round(new_value,3)
+
+def read_lexicon(path, sep='\t', normalize=None):
+    lex = None
+    with open(path) as fid:
+        lex = {wrd: float(scr) for wrd, scr in (line.split(sep) for line in fid)}
+    if normalize is not None:
+        assert isinstance(normalize, list) and \
+        len(normalize) == 2, "please provide a range for normalization. e.g., [-1,1]"
+        lex = normalize_scores(lex,normalize)
+    return lex
 
 class LexiconSentiment(object):
 
 	def __init__(self, lexicon=None, path=None, sep='\t', default_word_score=None,				
-				ignore_score_above=float('inf'), ignore_score_below=-float('inf'),
-				positive_threshold=0.5, negative_threshold=None, default_class=1,
-				norm_scores=False, agg="mean",binary=False):
+				keep_scores_below=None, keep_scores_above=None,
+				positive_threshold=0.5, negative_threshold=None, 
+				default_label=1,norm_scores=True, agg="mean",binary=False):
 				
 		"""
 		Parameters
@@ -48,18 +90,23 @@ class LexiconSentiment(object):
 				lex = read_lexicon(path, sep=sep)
 		else:
 			lex = lexicon
-		assert isinstance(lex, dict), "lexicon must be a dictionary"
-		lex = filter_lexicon(lex, ignore_above=ignore_score_above, 
-								  ignore_below=ignore_score_below)
+		
+		assert isinstance(lex, dict), "lexicon must be a dictionary"		
+		lex = filter_lexicon(lex, keep_below=keep_scores_below,
+								    keep_above=keep_scores_above)		
 		#create a default dict to avoid KeyErrors
 		try:
 			default_word_score = float(default_word_score)
 		except:
 			default_word_score = None
+		
+		self.norm_scores = norm_scores
+		self.keep_scores_below = keep_scores_below
+		self.keep_scores_above = keep_scores_above
 		self.lexicon = defaultdict(lambda:default_word_score,lex)
 		self.positive_threshold = positive_threshold
 		self.negative_threshold = negative_threshold
-		self.default_label = default_class	
+		self.default_label = default_label	
 		self.binary = binary
 		if agg == "sum":
 			self.agg = np.sum
@@ -117,10 +164,86 @@ class LexiconSentiment(object):
 			return np.array(predictions)
 		else:
 			raise AssertionError("input must be either a string or a list of strings")
-	
+
 	def debug(self, X):
 		predictions = [self.__predict(x, dbg=True) for x in X]		
 		return predictions
+	
+	def fit(self, X, Y,  samples=20, silent=False):
+		"""
+			get optimal threshold from a labeled dataset by computing the mean and std 
+			and then grid searching in a window of std+k around the mean (k is a constant)			
+		"""
+		# set_trace()
+		predictions = [self.__predict(x, dbg=True)[1] for x in X]
+		positive_idx = np.where(np.array(Y) == 1)[0]
+		negative_idx = np.where(np.array(Y) == -1)[0]
+		# set_trace()
+		positives =  [predictions[i] for i in positive_idx if predictions[i] is not None]
+		negatives =  [predictions[i] for i in negative_idx if predictions[i] is not None]
+		
+		#remove Nones
+		predictions = [x for x in predictions if x is not None]
+		mu_positive = round(np.mean(positives),3)
+		mu_negative = round(np.mean(negatives),3)
+		sig_positive = round(np.std(positives),3)				
+		sig_negative = round(np.std(negatives),3)				
+		lower = round(mu_negative - sig_negative,3)
+		upper = round(mu_positive + sig_positive,3)
+		# print "[search:{}]".format(repr([lower,upper]))
+		thresholds = [round(n,3) for n in np.linspace(lower,upper,samples)]
+		# thresholds = [round(n,3) for n in np.linspace(mu-(sig+c),mu+(sig+c),samples)]
+		best_t = self.positive_threshold
+		self.default_label = Counter(Y).most_common(1)[0][0]
+		# set_trace()
+		best_score = 0
+		for t in thresholds:
+			self.positive_threshold = t
+			Y_hat = self.predict(X)					
+			score = f1_score(Y, Y_hat,average="macro") 	
+			if score > best_score:
+				if not silent: print "[best >> t:{} | score:{}]".format(t,score)
+				best_score = score
+				best_t = t
+		self.positive_threshold = best_t
+	
+	def get_params(self):
+		return {"norm_scores":self.norm_scores,
+				"keep_scores_below": self.keep_scores_below, 
+				"keep_scores_above": self.keep_scores_above, 		
+				"positive_threshold": self.positive_threshold, 
+				"negative_threshold": self.negative_threshold, 
+				"default_label": self.default_label, 	
+				"binary": self.binary 
+				}
+
+	# def fit_old(self, X, Y, c=0.1, samples=20, silent=False):
+	# 	"""
+	# 		get optimal threshold from a labeled dataset by computing the mean and std 
+	# 		and then grid searching in a window of std+k around the mean (k is a constant)			
+	# 	"""
+	# 	predictions = [self.__predict(x, dbg=True)[1] for x in X]
+	# 	#remove Nones
+	# 	predictions = [x for x in predictions if x is not None]
+	# 	mu = round(np.mean(predictions),3)
+	# 	sig = round(np.std(predictions),3)	
+	# 	lower = round(mu-(sig+c),3)
+	# 	upper = round(mu+(sig+c),3)
+	# 	print "[search:{}]".format(repr([lower,upper]))			
+	# 	thresholds = [round(n,3) for n in np.linspace(lower,upper,samples)]
+	# 	best_t = self.positive_threshold
+	# 	self.default_label = Counter(Y).most_common(1)[0][0]
+	# 	# set_trace()
+	# 	best_score = 0
+	# 	for t in thresholds:
+	# 		self.positive_threshold = t
+	# 		Y_hat = self.predict(X)					
+	# 		score = f1_score(Y, Y_hat,average="macro") 	
+	# 		if score > best_score:
+	# 			if not silent: print "[best >> t:{} | score:{}]".format(t,score)
+	# 			best_score = score
+	# 			best_t = t
+	# 	self.positive_threshold = best_t
 
 class LexiconLogOdds(LexiconSentiment):
 

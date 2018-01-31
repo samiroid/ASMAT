@@ -209,45 +209,11 @@ def filter_labels(data,labels):
 #                if float(scr) < ignore_above and float(scr) > ignore_below}
 #     return lex
 
-def filter_lexicon(lexicon, ignore_above=float('inf'), ignore_below=-float('inf')):
-    lex = { wrd: score for wrd, score in lexicon.items()
-            if  float(score) < ignore_above 
-            and float(score) > ignore_below }
-    return lex
+# def filter_lexicon(lexicon, ignore_above=float('inf'), ignore_below=-float('inf')):
+#     lex = { wrd: score for wrd, score in lexicon.items()
+#             if  float(score) < ignore_above 
+#             and float(score) > ignore_below }
+#     return lex
 
-def save_lexicon(lexicon, path, sep='\t'):
-    dirname = os.path.dirname(path)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-    with open(path,"w") as fid:
-        for word, score in lexicon.items():
-            fid.write("{}{}{}\n".format(word, sep, float(score)))
-
-def normalize_scores(lexicon, to_range=(0,1)):
-    scores = lexicon.values()
-    old_range = (min(scores),max(scores))
-    for k in lexicon.keys():
-        lexicon[k] = linear_conversion(old_range,to_range,lexicon[k])
-    return lexicon
-
-def linear_conversion(source_range, dest_range, val):
-    MIN = 0
-    MAX = 1
-    val = float(val)
-    source_range = np.asarray(source_range,dtype=float)
-    dest_range = np.asarray(dest_range,dtype=float)
-    new_value = ( (val - source_range[MIN]) / (source_range[MAX] - source_range[MIN]) ) *\
-                (dest_range[MAX] - dest_range[MIN]) + dest_range[MIN]
-    return round(new_value,3)
-
-def read_lexicon(path, sep='\t', normalize=None):
-    lex = None
-    with open(path) as fid:
-        lex = {wrd: float(scr) for wrd, scr in (line.split(sep) for line in fid)}
-    if normalize is not None:
-        assert isinstance(normalize, list) and \
-        len(normalize) == 2, "please provide a range for normalization. e.g., [-1,1]"
-        lex = normalize_scores(lex,normalize)
-    return lex
 
     

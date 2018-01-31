@@ -8,7 +8,7 @@ echo "" > "done_lowresource.txt"
 #BOW
 for ds in $sentiment_datasets; 
 do
-    ./experiments/asma/scripts/BOW_ASMA.sh $ds ""
+    ./experiments/low_resource/scripts/BOW_LR.sh $ds ""
     echo $ds >> "done_lowresource.txt"
 done
 
@@ -17,21 +17,21 @@ done
 # 50-D vectors
 for ds in $sentiment_datasets; 
 do
-    ./experiments/asma/scripts/neural_ASMA.sh $ds "" str_skip_50.txt 50D
+    ./experiments/low_resource/scripts/neural_LR.sh $ds "" str_skip_50.txt 50D
     echo $ds >> "done_lowresource.txt"
 done
 
 # 200-D vectors
 for ds in $sentiment_datasets; 
 do
-    ./experiments/asma/scripts/neural_ASMA.sh $ds "" str_skip_200.txt 200D
+    ./experiments/low_resource/scripts/neural_LR.sh $ds "" str_skip_200.txt 200D
     echo $ds >> "done_lowresource.txt"
 done
 
 # 400-D vectors
 for ds in $sentiment_datasets; 
 do
-    ./experiments/asma/scripts/neural_ASMA.sh $ds "" str_skip_400.txt 400D
+    ./experiments/low_resource/scripts/neural_LR.sh $ds "" str_skip_400.txt 400D
     echo $ds >> "done_lowresource.txt"
 done
 

@@ -15,66 +15,61 @@ if [ -z "$2" ]
     exit 1
 fi
 LEX_NAME=$2
+
 if [ -z "$3" ]
   then
-	RUN_ID=$DATASET
+	RESFILE="asma.txt"
+	echo "default results file"
 else
-	RUN_ID=$DATASET"_"$3
+	RESFILE=$3
 fi
 
-PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments"
-BASE=$PROJECT_PATH"/sma/lexicon/"$DATASET
-# BASE=$PROJECT_PATH"/lexicon_sma/"$DATASET
+if [ -z "$4" ]
+  then
+	RUN_ID=$LEX_NAME
+else
+	RUN_ID=$4
+fi
+
+PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/asma"
+DATA=$PROJECT_PATH"/DATA"
+RESULTS=$DATA"/results/"$RESFILE
+
+
 HYPERPARAMS=$PROJECT_PATH"/confs/lexicon.cfg"
 CONFS=$PROJECT_PATH"/confs/default_lexicon.cfg"
-LO_CONFS=$PROJECT_PATH"/confs/default_logodds_lexicon.cfg"
 
-#create folders
-mkdir -p $BASE
-DATA=$BASE"/DATA"
-#FEATURES=$BASE"/features"
-#MODELS=$BASE"/models"
-RESULTS=$BASE"/results"
+
 
 #TXT
 TRAIN=$DATASET"_train"
 DEV=$DATASET"_dev"
 TEST=$DATASET"_test"
 
-LEXICON=$PROJECT_PATH"/lexicons/"$LEX_NAME
-echo "LEXICON SMA > " $DATASET "@" $LEXICON
+LEXICON="DATA/lexicons/"$LEX_NAME
+echo "LEXICON SMA > " $DATASET "@" $LEX_NAME
 
 # OPTIONS
 CLEAN=0
-SPLIT=0
-LOG_ODDS=1
-LEX_SENT=0
-
-if (($CLEAN > 0)); then
-	echo "CLEAN-UP!"
-	rm -rf $BASE || True
-fi
-
-
-### DATA SPLIT ###
-if (($SPLIT > 0)); then
-	echo $RED"##### SPLIT DATA #####"$COLOR_OFF	
-	INPUT=$PROJECT_PATH"/datasets/"$DATASET".txt"
-	python ASMAT/toolkit/dataset_splitter.py -input $INPUT \
-											 -train $DATA"/"$TRAIN \
-											 -test $DATA"/"$TEST \
-											 -dev $DATA"/"$DEV \
-											 -rand_seed $RUN_ID 
-	
-fi
-
+LEX_SENT=1
 if (($LEX_SENT > 0)); then
-python ASMAT/toolkit/lexicon_classifier.py -lex $LEXICON".txt" -test_set $DATA"/"$TEST \
-										-dev_set $DATA"/"$DEV \
-									 	-res $RESULTS"/"$LEX_NAME".txt" \
-									 	-out $RESULTS"/out_"$TEST".txt" \
-										-confs_path $CONFS \
-										-debug $BASE"/dbg/"
+python ASMAT/toolkit/lexicon_classifier.py -lex $LEXICON".txt" \
+											-run_id $RUN_ID"_t" \
+											-test_set $DATA"/txt/"$TEST \
+											-dev_set $DATA"/txt/"$DEV \
+									 		-res $RESULTS \
+											-confs_path $CONFS \
+											-hyperparams_path "" \
+											-debug "dbg/"
+
+python ASMAT/toolkit/lexicon_classifier_bkp.py -lex $LEXICON".txt" \
+											-run_id $RUN_ID \
+											-test_set $DATA"/txt/"$TEST \
+											-dev_set $DATA"/txt/"$DEV \
+									 		-res $RESULTS \
+											-confs_path $CONFS \
+											-hyperparams_path $HYPERPARAMS \
+											-debug "dbg/"
 
 # python ASMAT/models/lexicon_sentiment.py -lex $LEXICON".txt" -test_set $DATA"/"$TEST \
 # 										-dev_set $DATA"/"$DEV \
@@ -84,15 +79,6 @@ python ASMAT/toolkit/lexicon_classifier.py -lex $LEXICON".txt" -test_set $DATA"/
 # 									 	-hyperparams_path $HYPERPARAMS \		
 fi 
 
-if (($LOG_ODDS > 0)); then
-	echo $RED"##### LOG ODDS CLASSIFIER #####"$COLOR_OFF	
-python ASMAT/toolkit/lexicon_logodds.py -lex $LEXICON".txt" -test_set $DATA"/"$TEST \
-										-dev_set $DATA"/"$DEV \
-									 	-res $RESULTS"/"$LEX_NAME".txt" \
-									 	-out $RESULTS"/out_"$TEST".txt" \
-										-confs_path $LO_CONFS \
-										-debug $BASE"/dbg/"
-fi 
 
 							 
 

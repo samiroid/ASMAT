@@ -9,6 +9,11 @@ LEXICONS_DST="DATA/lexicons"
 DATASETS_SRC="DATA/raw_datasets"
 DATASETS_DST="experiments/datasets"
 
+NRC_HS="/Users/samir/Dev/resources/lexicons/bkp/NRC-Hashtag-Sentiment-Lexicon-v0.1/unigrams-pmilexicon.txt"
+NRC_S140="/Users/samir/Dev/resources/lexicons/bkp/Sentiment140/unigrams-pmilexicon.txt"
+python ASMAT/toolkit/lexicon_parser.py -lex $NRC_HS -out $LEXICONS_DST"/NRC_HS.txt"
+python ASMAT/toolkit/lexicon_parser.py -lex $NRC_S140 -out $LEXICONS_DST"/NRC_S140.txt"
+
 GET_LEXICONS=0
 if (($GET_LEXICONS > 0)); then	
 	LEXICONS="sentiment/MPQA.txt sentiment/semlex.txt  \
@@ -31,7 +36,7 @@ fi
 # Add datasets
 ####
 
-GET_DATASETS=1
+GET_DATASETS=0
 if (($GET_DATASETS > 0)); then
 	HCR=$DATASETS_SRC"/hcr"
 	OMD=$DATASETS_SRC"/debate08"
@@ -56,7 +61,7 @@ if (($GET_DATASETS > 0)); then
 fi
 
 #grab embeddings
-GET_EMBEDDINGS=1
+GET_EMBEDDINGS=0
 if (($GET_EMBEDDINGS > 0)); then
 	mkdir -p "DATA/embeddings"	
 	EMBEDDINGS_SRC="/Users/samir/Dev/resources/embeddings/twitter/str_skip/str_skip_50.txt"

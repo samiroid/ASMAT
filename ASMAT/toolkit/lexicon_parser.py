@@ -7,7 +7,7 @@ import sys
 sys.path.append("..")
 
 from ASMAT.lib.extract import docs2idx, build_vocabulary
-from ASMAT.lib import embeddings
+from ASMAT.lib import embeddings, preprocess
 from ASMAT.lib.data import read_dataset, flatten_list, filter_labels, save_dataset
 
 # import argparse 
@@ -169,7 +169,10 @@ def save_lexicon(lex, path_out):
     with codecs.open(path_out,"w","utf-8") as fod:
         sorted_lex = sorted(lex.items(),key=lambda x:x[1],reverse=True)
         for wrd, lab in sorted_lex:
-            fod.write(u"%s\t%s\n" % (wrd,str(lab)))
+            try:
+                fod.write(u"%s\t%s\n" % (wrd,str(lab)))
+            except UnicodeDecodeError:
+                print "unicode error: ", wrd, lab 
 
 def parse_lex(path_in, path_out, word_pos=0, label_pos=1, sep='\t',skip_first=False):
     lex = read_lex(path_in,word_pos,label_pos,sep,skip_first)
@@ -184,7 +187,7 @@ def read_lex(path_in, word_pos=0, label_pos=1, sep='\t',skip_first=False):
     	skip_first: if True, ignore the first line
     """
     ignored=[]
-    with open(path_in) as fid:
+    with codecs.open(path_in,"r","utf-8") as fid:
         lex = {}
         if skip_first:
             fid.readline()

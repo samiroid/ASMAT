@@ -59,28 +59,34 @@ def read_results(path, metric="avgF1", sep=",", run_ids=None, models=None, datas
 		assumes the following columns: dataset, model, [metric]
 	"""
 	c = pd.read_csv(path,sep=sep)		
-	#filter by run_ids 
-	c = c[c["run_id"].isin(run_ids)]
+	#c = c[["dataset","model","run_id",metric]]
+	c.drop_duplicates(inplace=True)
+	
+	if run_ids is not None:
+		#filter by run_ids 
+		c = c[c["run_id"].isin(run_ids)]
 	#get datasets 
 	if datasets is not None:
 		c = c[c["dataset"].isin(datasets)]		
 	if models is not None:
 		c = c[c["model"].isin(models)]		
+	
 	uniq_models = c["model"].unique().tolist()
 	uniq_datasets = c["dataset"].unique().tolist()	
 	dt = [[d] + c[c["dataset"]==d][metric].values.tolist() for d in uniq_datasets]
 	dt = dt
 	columns = ["dataset"] + uniq_models	
 
-	# set_trace()
+	# set_trace()	
 	df = pd.DataFrame(dt,columns=columns)	
+	
 	if models is not None:
 		#re-order model columns
 		df = df[["dataset"]+models]
 	return df
 
 def get_hyperparams(path, default_conf):
-	confs = json.load(open(path, 'r'))
+	confs = json.load(open(path, 'r'))	
 	#add configurations that are not specified with the default values
 	confs = dict(default_conf.items() + confs.items())
 	params = confs.keys()

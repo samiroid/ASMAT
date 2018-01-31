@@ -17,7 +17,7 @@ BLUES = [BLUE_L, BLUE_M, BLUE_S, BLUE_STEEL ]
 ALL_COLORS = BLUES + GREENS + GRAYS + [YELLOW]
 PALETTE_1 =  [YELLOW, GRAY_L, GRAY_M, GRAY_S, BLUE_S, BLUE_M, BLUE_M]
 
-MIN_BAR_DIFF = 0.005
+MIN_BAR_DIFF = 0.015
 
 def plot_df(df, ax, x, ys, cols=None, 
             min_y=0, max_y=1, 
@@ -52,7 +52,7 @@ def plot_df(df, ax, x, ys, cols=None,
     new_ticks = [x for x in ax.get_yticks() if x>=min_y and x<=max_y][1:-1]
     ax.set_yticks(new_ticks)
     if leg:
-        ax.legend(loc='upper right', bbox_to_anchor=[1.02, 1.05], fancybox=True, shadow=True)
+        ax.legend(loc='upper right', bbox_to_anchor=[1.02, 1.05], fancybox=True, shadow=True, ncol=2)
     else:
         ax.legend().set_visible(False)
     return ax
