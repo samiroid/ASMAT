@@ -12,7 +12,7 @@ DATASET=$1
 
 if [ -z "$2" ]
   then
-	RESFILE="asma.txt"
+	RESFILE="document_models.txt"
 	echo "default results file: " $RESFILE
 else
 	RESFILE=$2
@@ -30,15 +30,12 @@ fi
 if [ -z "$4" ]
   then
 	RUN_ID=$EMB_FILE
-	echo "default results file"
+	echo "default RUN ID"
 else
 	RUN_ID=$4
 fi
-
-
-
 #config
-PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/asma"
+PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/document_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -59,7 +56,7 @@ EXTRACT=1
 GET_FEATURES=1
 LINEAR_MODELS=1
 NLSE=1
-HYPERPARAM=1
+HYPERPARAM=0
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
 	rm -rf $DATA"/pkl" || True

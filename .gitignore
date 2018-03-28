@@ -90,3 +90,7 @@ ENV/
 DATA/*
 experiments/*/DATA
 
+experiments/asma/server_results/*
+notebook/*
+old_experiments/*
+dbg/*

@@ -31,7 +31,7 @@ else
 	RUN_ID=$4
 fi
 
-PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/low_resource"
+PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/lexicon_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 HYPERPARAMS=$PROJECT_PATH"/confs/hyper-lexicon.cfg"
