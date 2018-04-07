@@ -1,6 +1,5 @@
 import argparse
 import cPickle
-from joblib import Parallel, delayed
 from ipdb import set_trace
 import numpy as np
 import os
@@ -19,9 +18,6 @@ def multinomial_samples(unigram_distribution, exclude=[], n_samples=1):
         if wrd_idx not in exclude: 
             samples.append(wrd_idx)                        
     return samples
-
-def random_samples(exclude=[], n_samples=1):
-    pass
 
 def extract(instance, unigram_distribution, num_neg_samples):        
     train = instance[TRAIN_IDX]    
@@ -114,76 +110,3 @@ if __name__ == "__main__":
     os.rename(tmp_data_path, args.input)
     tend = time.time() - t0
     print "\n[runtime: %d minutes (%.2f secs)]" % ((tend/60),tend)    
-
-
-
-    # neg_samples = []    
-    
-    #     set_trace()
-        
-    #     neg_samples.append(neg_samp)        
-    # instance[NEG_SAMPLES_IDX] = neg_samples    
-    # return instance
-
-    # set_trace()
-    # sys.exit()
-
-
-
-    
-
-
-
-
-
-
-    # done=False
-    # j=0 #number of instances processed
-    # while not done:        
-    #     try:
-    #         current_instances = []
-    #         if args.resume:
-    #             while len(current_instances) < args.n_workers: 
-    #                 next_inst = training_data.next()
-    #                 #ignore the instances where these quantities have already been calculated
-    #                 if len(next_inst[NEG_SAMPLES_IDX]) == 0: current_instances.append(next_inst)
-    #         else:
-    #             for _ in xrange(args.n_workers): current_instances.append(training_data.next())
-    #     except StopIteration:            
-    #         done=True
-    #     if args.n_workers>1:
-    #         with Parallel(n_jobs=args.n_workers) as parallel:
-    #             res = parallel(delayed(extract)(instance, unigram_distribution, args.negative_samples) for instance in current_instances)            
-    #     else:            
-    #         res = [extract(instance,unigram_distribution, args.negative_samples) for instance in current_instances]    
-    #     # print res
-    #     for r in res: stPickle.s_dump_elt(r,new_training_data)       
-    #     j+=len(current_instances)
-    #     t_i = (time.time() - t0) / 60 
-    #     sys.stdout.write("\r>:%d (~%d mins)" % (j,t_i))
-    #     sys.stdout.flush()     
-    # #replace the training data file with the new augmented one    
-    # os.remove(args.input)
-    # os.rename(tmp_data_path, args.input)
-    # tend = time.time() - t0
-    # print "\n[runtime: %d minutes (%.2f secs)]" % ((tend/60),tend)    
-
-
-
-# SAMPLES = 10000    
-# samplz = []
-# rand_msgs = [np.random.randint(0,len(wrd2idx),np.random.randint(4,20)) for x in xrange(SAMPLES)]
-
-# t0 = time.time()
-# for m in rand_msgs:
-#     samplz += [sampler.sample((10,len(m)))]
-# tend = t0 - time.time()
-# print "simple version took: ", tend
-
-# print "*"*80
-
-# t0 = time.time()
-# for m in rand_msgs:
-#     samplz += [sampler.sample_2(m,(10,len(m)))]
-# tend = t0 - time.time()
-# print "crazy version took: ", tend
