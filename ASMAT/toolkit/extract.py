@@ -6,7 +6,7 @@ import os
 import sys
 sys.path.append("..")
 
-from ASMAT.lib.extract import docs2idx, build_vocabulary
+from ASMAT.lib.vectorizer import docs2idx, build_vocabulary
 from ASMAT.lib import embeddings
 from ASMAT.lib.data import read_dataset, flatten_list, filter_labels
 

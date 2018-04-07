@@ -3,7 +3,34 @@ from collections import defaultdict
 import numpy as np
 import os
 from ipdb import set_trace
+from .ext.tweetokenize import Tokenizer
+tokenizer = Tokenizer(ignorequotes=False,usernames="@user",urls="@url",numbers="*number*")
 
+def max_repetitions(sentence, n=3):
+    """
+        Normalizes a string to at most n repetitions of the same character
+        e.g, for n=3 and "helllloooooo" -> "helllooo"
+    """
+    new_sentence = ' '
+    reps=0
+    for c in sentence:
+        if c == new_sentence[-1]:
+            reps+=1
+            if reps >= n:
+                continue
+        else:
+            reps=0
+        new_sentence+=c
+    return new_sentence.strip()
+
+def preprocess(d, stop_words=()):       
+    d = unicode(d.lower())
+    tokens = tokenizer.tokenize(d)     
+    d = u' '.join([t for t in tokens if t not in set(stop_words)])
+    #reduce character repetitions
+    d = max_repetitions(d)
+    return d
+    
 def flatten_list(l):
     return [item for sublist in l for item in sublist]    
 
@@ -176,6 +203,14 @@ def read_dataset(path, labels=None):
             ys+=[y]
     if labels is not None:
         data = filter_labels(data, labels)    
+    return data
+
+def read_data(path, sep="\t"):	
+    data = []    
+    with codecs.open(path, "r", "utf-8") as fid:
+        for l in fid:
+            splt = l.rstrip("\n").split(sep)
+            data.append(splt)
     return data
 
 # def save_dataset(data, out_path, labels=None):

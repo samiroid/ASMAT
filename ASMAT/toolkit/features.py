@@ -9,7 +9,7 @@ import numpy as np
 import sys
 sys.path.append("..")
 
-from ASMAT.lib.extract import docs2idx, build_vocabulary
+from ASMAT.lib.vectorizer import docs2idx, build_vocabulary
 from ASMAT.lib import embeddings, features
 from ASMAT.lib.data import read_dataset, flatten_list
 
@@ -24,7 +24,10 @@ def run(inputs, opts):
 				for agg in opts.bow:
 					fname = basename + "-BOW-" + agg.upper()
 					print "\t > BOW ({})".format(fname)
-					bow = features.BOW(X, vocabulary, agg=agg)
+					if agg == "bin":
+						bow = features.BOW(X, vocabulary)
+					elif agg == "freq":
+						bow = features.BOW_freq(X, vocabulary)
 					np.save(opts.out_folder + fname, bow)
 					# print "\t > {}".format(repr(bow))
 					# print len(X), bow.shape

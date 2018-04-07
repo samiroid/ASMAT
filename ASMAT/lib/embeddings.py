@@ -1,5 +1,5 @@
 import codecs
-from extract import idx2word
+from vectorizer import idx2word
 import numpy as np
 from sklearn.decomposition import PCA
 import os

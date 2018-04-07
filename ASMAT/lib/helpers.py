@@ -7,6 +7,18 @@ from pdb import set_trace
 import pprint
 import string
 
+def colstr(st, color, best=False):    
+    if color == 'red':
+        cstring = "\033[31m" + st  + "\033[0m"
+    elif color == 'green':    
+        cstring = "\033[32m" + st  + "\033[0m"
+    else:
+        cstring = st
+    if best:
+        cstring+=" **"
+    return cstring   
+
+
 def str2seed(s):
 	"""
 		simple heuristic to convert strings into a digit

@@ -15,7 +15,7 @@ import sys
 #local 
 sys.path.append("..")
 from ASMAT.lib import helpers, embeddings
-from ASMAT.models import nlse
+from ASMAT.models.nlse import nlse
 
 def hypertune(train, dev, emb_path, obj, hyperparams, res_path=None):    		
 

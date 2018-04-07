@@ -1,5 +1,10 @@
 import numpy as np
 import os
+from collections import Counter
+from scipy.sparse import lil_matrix
+
+# emoticon regex taken from Christopher Potts' script at http://sentiment.christopherpotts.net/tokenizing.html
+emoticon_regex = r"""(?:[<>]?[:;=8][\-o\*\']?[\)\]\(\[dDpP/\:\}\{@\|\\]|[\)\]\(\[dDpP/\:\}\{@\|\\][\-o\*\']?[:;=8][<>]?)"""
 
 
 def NLSE(X, Y):
@@ -14,15 +19,49 @@ def NLSE(X, Y):
 
 	return X, Y, st, ed
 
-def BOW(docs, wrd2idx, agg='freq'):
+# def BOW(docs, wrd2idx, agg='freq'):
+# 	"""
+# 		Extract bag-of-word features
+# 	"""
+# 	assert agg in ["freq", "bin"]
+# 	X = np.zeros((len(docs), len(wrd2idx))).astype('int32')
+# 	for i, doc in enumerate(docs):
+# 		try:
+# 			X[i, np.array(doc)] = 1
+# 		except IndexError:
+# 			pass
+# 	return X
+
+def BOW(docs, vocab, sparse=False):
 	"""
 		Extract bag-of-word features
-	"""
-	assert agg in ["freq", "bin"]
-	X = np.zeros((len(docs), len(wrd2idx)))
+	"""	
+	if sparse:
+		X = lil_matrix((len(docs), len(vocab)))
+	else:
+		X = np.zeros((len(docs), len(vocab)))
 	for i, doc in enumerate(docs):
 		try:
 			X[i, np.array(doc)] = 1
+		except IndexError:
+			pass
+	return X
+
+def BOW_freq(docs, vocab, sparse=False):
+	"""
+		Extract bag-of-word features
+	"""	
+	if sparse:
+		X = lil_matrix((len(docs), len(vocab)))
+	else:
+		X = np.zeros((len(docs), len(vocab)))
+
+	for i, doc in enumerate(docs):		
+		if len(doc) == 0: continue
+		ctr = Counter(doc)
+		cts = [ctr[w] for w in doc]
+		try:
+			X[i, np.array(doc)] = np.array(cts)
 		except IndexError:
 			pass
 	return X

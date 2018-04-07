@@ -24,12 +24,12 @@ def idx2word(wrd2idx):
     return {i:w for w, i in wrd2idx.items()}
 
 
-def docs2idx(docs, wrd2idx=None):
+def docs2idx(docs, wrd2idx=None, max_words=None):
     """
         Convert documents to lists of word indices
     """
     if wrd2idx is None:
-        wrd2idx = build_vocabulary(docs)
+        wrd2idx = build_vocabulary(docs,max_words=max_words)
     
     X = [[wrd2idx[w] for w in m.split() if w in wrd2idx] for m in docs]
     return X, wrd2idx
