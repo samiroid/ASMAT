@@ -68,12 +68,14 @@ class Usr2Vec():
         #                              outputs=[usr,sent,neg_samples],      
         #                              mode="FAST_COMPILE")
         self.dbg = theano.function(inputs=[usr_idx, sent_idx, neg_samp_idx],
-                                        outputs=[usr,sent,neg_samples])
+                                        outputs=[usr,sent,neg_samples],
+                                        allow_input_downcast=True)
 
         self.train = theano.function(inputs=[usr_idx, sent_idx, neg_samp_idx, curr_lrate],
                                         outputs=final_loss,
                                         updates=updates,
-                                        mode="FAST_RUN")
+                                        mode="FAST_RUN",
+                                        allow_input_downcast=True)
         #\propto P(message|usr)    
         # scores_m = T.exp(T.dot(U.T,E[:,sent_idx]))    
         scores_m = T.dot(U.T,E[:,sent_idx])    
@@ -84,7 +86,8 @@ class Usr2Vec():
         # user_score = scores_m[usr_idx]
         user_score = log_prob[usr_idx]
         self.predict = theano.function(inputs=[usr_idx,sent_idx],
-                                        outputs=[user_score,prob])    
+                                        outputs=[user_score,prob],
+                                        allow_input_downcast=True)    
 
     def rank_loss(self, w_idx, negs_idx, usr, E, U):
         w_emb     = E[:, w_idx]
