@@ -46,20 +46,21 @@ if __name__ == "__main__":
 	print "[Training U2V by user]"
 	print "loading data..."	
 	with open(args.aux,"r") as fid:
-		_,_,_,E = cPickle.load(fid) 
-	try:
-		n_usrs = count_users(args.input)
-	except IOError:
-		print "Couldn't not find file %s" % args.input
-		sys.exit()	
+		_,_,_,n_users,E = cPickle.load(fid) 
+	# try:
+	# 	n_users = count_users(args.input)
+	# except IOError:
+	# 	print "Couldn't not find file %s" % args.input
+	# 	sys.exit()		
 	#path to save intermediate versions of the user embedding matrix (during training)
 	tmp_name = ''.join([ chr(random.randint(97,122)) for i in xrange(10)])
 	user_emb_bin = os.path.split(args.input)[0]+"/tmp-"+tmp_name.upper() 
 	print "[lrate: %.5f | margin loss: %d | epochs: %d| reshuff: %s | init_w2v: %s | @%s]\n" % (args.lrate,args.margin, args.epochs, args.reshuff, args.init_w2v, user_emb_bin)	
+	
 	if args.init_w2v:
-		u2v = usr2vec.Usr2Vec(E, n_usrs,lrate=args.lrate,margin_loss=args.margin, init_w2v=args.init_w2v)	
+		u2v = usr2vec.Usr2Vec(E, n_users,lrate=args.lrate,margin_loss=args.margin, init_w2v=args.init_w2v)	
 	else:
-		u2v = usr2vec.Usr2Vec(E, n_usrs,lrate=args.lrate,margin_loss=args.margin)	
+		u2v = usr2vec.Usr2Vec(E, n_users,lrate=args.lrate,margin_loss=args.margin)	
 	total_time = time.time()					
 	usr2idx = {}
 	tf = open(args.input,"r")	
@@ -71,7 +72,7 @@ if __name__ == "__main__":
 	for z, instance in enumerate(training_data):	
 		# if z == 100:
 		# 	print "bailed earlier with %d users " % z
-		# 	n_usrs = z
+		# 	n_users = z
 		# 	break
 		prev_logprob, best_logprob = -10**100, -10**100	 
 		prev_obj, best_obj  = 10**100, 10**100
@@ -84,7 +85,7 @@ if __name__ == "__main__":
 			u_idx = len(usr2idx)
 			usr2idx[user] = u_idx		
 		if not args.quiet:		
-			print "[user: %s (%d/%d)]" % (user,z+1,n_usrs)		
+			print "[user: %s (%d/%d)]" % (user,z+1,n_users)		
 		user_time  = time.time()	
 		for e in xrange(args.epochs):	
 			############# TRAIN 	
@@ -159,7 +160,7 @@ if __name__ == "__main__":
 	mins = np.floor(tt*1.0/60)
 	secs = tt - mins*60	
 	print "*"*90
-	print "[avg epochs: %d | avg ILL: %.4f | lrate: %.5f]" % ((total_epochs/n_usrs),(total_logprob/n_usrs),args.lrate)
+	print "[avg epochs: %d | avg ILL: %.4f | lrate: %.5f]" % ((total_epochs/n_users),(total_logprob/n_users),args.lrate)
 	print "*"*90
 	print "[runtime: %d.%d minutes]" % (mins,secs)	
 	tf.close()	
