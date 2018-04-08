@@ -73,7 +73,7 @@ if __name__ == "__main__" :
 	prev_user, prev_user_data, prev_ctxscores, prev_neg_samples  = None, [], [], []
 	wrd_idx_counts = np.zeros(len(wrd2idx))	
 	f_train = open(args.output,"wb") 
-	
+	total_users=0
 	with open(args.input,"r") as fid:		
 		for j, line in enumerate(fid):		
 			try:			
@@ -90,7 +90,7 @@ if __name__ == "__main__" :
 				#first time 
 				prev_user = u_idx
 			elif u_idx != prev_user:						
-				#after accumulating all documents for current user, shuffle and write them to disk			
+				#after accumulating all documents for current user, shuffle and write them to disk	
 				assert len(prev_user_data) == len(prev_neg_samples)
 				#shuffle the data			
 				shuf_idx = np.arange(len(prev_user_data))
@@ -106,7 +106,8 @@ if __name__ == "__main__" :
 				#[user_name, train docs, test docs, negative samples] 			
 				stPickle.s_dump_elt([prev_user, train, test, neg_samples ], f_train)				
 				prev_user_data = []				
-				prev_neg_samples = []							
+				prev_neg_samples = []	
+				total_users+=1						
 			elif j == n_docs-1:			
 				#can't forget the very last message
 				prev_user_data.append(msg_idx)				
@@ -122,6 +123,7 @@ if __name__ == "__main__" :
 				test  = prev_user_data[split:]				
 				neg_samples =  prev_neg_samples[:split]
 				stPickle.s_dump_elt([prev_user, train, test, neg_samples ], f_train)
+				total_users+=1
 				# print "  > user: %s (%d)" % (prev_user, len(train))
 			prev_user = u_idx
 			prev_user_data.append(msg_idx)
@@ -136,6 +138,6 @@ if __name__ == "__main__" :
 	#aux_data = os.path.split(args.output)[0] + "/aux.pkl"
 	aux_data = os.path.splitext(args.output)[0] + "_aux.pkl"
 	with open(aux_data,"wb") as fid:
-		cPickle.dump([wrd2idx,unigram_distribution, word_counter, E], fid, cPickle.HIGHEST_PROTOCOL)
+		cPickle.dump([wrd2idx,unigram_distribution, word_counter, total_users, E], fid, cPickle.HIGHEST_PROTOCOL)
 	tend = time.time() - t0
 	print "\n[runtime: %d minutes (%.2f secs)]" % ((tend/60),tend)    
