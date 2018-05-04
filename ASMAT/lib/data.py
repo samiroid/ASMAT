@@ -2,7 +2,10 @@ import codecs
 from collections import defaultdict
 import numpy as np
 import os
-from ipdb import set_trace
+try:
+    from ipdb import set_trace
+except:
+    from pdb import set_trace
 from .ext.tweetokenize import Tokenizer
 tokenizer = Tokenizer(ignorequotes=False,usernames="@user",urls="@url",numbers="*number*")
 
@@ -197,7 +200,7 @@ def read_dataset(path, labels=None):
     with codecs.open(path, "r", "utf-8") as fid:
         for l in fid:
             splt = l.replace("\n", "").split("\t")
-            y = splt[0]
+            y = splt[0]            
             x = ' '.join(splt[1:])
             data.append([y,x])	
             ys+=[y]

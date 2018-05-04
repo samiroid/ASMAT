@@ -18,12 +18,9 @@ import usr2vec
 
 np.set_printoptions(threshold=np.nan)
 warnings.filterwarnings("ignore")
-MIN_DOC_LEN=4
 
-def count_users(dataset):	
-	with open(dataset) as fid:
-		return len([z for z in stPickle.s_load(fid)])
-
+def tmp_name():
+	return ''.join([ chr(random.randint(97,122)) for i in xrange(10)]).upper() 
 def get_parser():
     parser = argparse.ArgumentParser(description="Train U2V")
     parser.add_argument('-input', type=str, required=True, help='train file(s)')
@@ -47,14 +44,9 @@ if __name__ == "__main__":
 	print "loading data..."	
 	with open(args.aux,"r") as fid:
 		_,_,_,n_users,E = cPickle.load(fid) 
-	# try:
-	# 	n_users = count_users(args.input)
-	# except IOError:
-	# 	print "Couldn't not find file %s" % args.input
-	# 	sys.exit()		
-	#path to save intermediate versions of the user embedding matrix (during training)
-	tmp_name = ''.join([ chr(random.randint(97,122)) for i in xrange(10)])
-	user_emb_bin = os.path.split(args.input)[0]+"/tmp-"+tmp_name.upper() 
+	
+	#path to save intermediate versions of the user embedding matrix (during training)		
+	user_emb_bin = os.path.split(args.input)[0]+"/tmp-"+tmp_name()
 	print "[lrate: %.5f | margin loss: %d | epochs: %d| reshuff: %s | init_w2v: %s | @%s]\n" % (args.lrate,args.margin, args.epochs, args.reshuff, args.init_w2v, user_emb_bin)	
 	
 	if args.init_w2v:
@@ -62,20 +54,24 @@ if __name__ == "__main__":
 	else:
 		u2v = usr2vec.Usr2Vec(E, n_users,lrate=args.lrate,margin_loss=args.margin)	
 	total_time = time.time()					
-	usr2idx = {}
-	tf = open(args.input,"r")	
-	
-	training_data = stPickle.s_load(tf)   	
-	#each training instance corresponds to a user
+	usr2idx = {}	
 	total_logprob = 0  
 	total_epochs = 0
+	#training file cursor
+	tf = open(args.input,"r")		
+	training_data = stPickle.s_load(tf)   	
+	#each training instance corresponds to a user and we are optimizing users one by one
 	for z, instance in enumerate(training_data):	
 		# if z == 100:
 		# 	print "bailed earlier with %d users " % z
 		# 	n_users = z
 		# 	break
+
+		#initialize with small numbers
 		prev_logprob, best_logprob = -10**100, -10**100	 
+		#initialize with large numbers 
 		prev_obj, best_obj  = 10**100, 10**100
+		#number of drops in performance during training (for patience)
 		drops = 0		
 		curr_lrate = u2v.lrate
 		user, train, test, neg_samples = instance
@@ -140,7 +136,7 @@ if __name__ == "__main__":
 				if curr_lrate!=prev_lrate:
 					print " ILL: " + colstr(("%.3f" % logprob), color, (best_logprob==logprob)) + " (lrate:" + str(curr_lrate)+")" 
 				else:
-					print " ILL: " + colstr(("%.3f" % logprob), color, (best_logprob==logprob))			
+					print " ILL: " + colstr(("%.3f" % logprob), color, (best_logprob==logprob))		
 			if drops>=args.patience:
 				print "ran out of patience (%d epochs)" % e
 				break
@@ -154,8 +150,7 @@ if __name__ == "__main__":
 		total_logprob+=best_logprob
 		alp = total_logprob/(z+1)
 		if not args.quiet:
-			print "> ILL: %.3f %d.%d mins (avg ILL: %.3f| %d.%d mins)" % (best_logprob,user_mins,user_secs,alp,tt_mins,tt_secs)
-		
+			print "> ILL: %.3f %d.%d mins (avg ILL: %.3f| %d.%d mins)" % (best_logprob,user_mins,user_secs,alp,tt_mins,tt_secs)		
 	tt = time.time() - total_time
 	mins = np.floor(tt*1.0/60)
 	secs = tt - mins*60	
