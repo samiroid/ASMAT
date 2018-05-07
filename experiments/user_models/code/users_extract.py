@@ -19,20 +19,47 @@ from ASMAT.lib.data import read_dataset, flatten_list, filter_labels
 # 	vocab = build_vocabulary(vocab_docs, max_words=max_words)
 # 	return vocab
 
-def get_vocabulary(text_path, label_paths, max_words=None):	
-	datasets = []	
+# def main(fnames, vocab, opts):
+# 	#read data
+# 	datasets = []
+# 	for fname in fnames:
+# 		print "[reading data @ {}]".format(repr(fname))
+# 		ds = read_dataset(fname, labels=opts.labels)
+# 		datasets.append(ds)	
+# 	#vectorize
+# 	print "[vectorizing documents]"
+# 	for name, ds in zip(fnames, datasets):
+# 		X, Y, label_map = vectorize(ds, vocab, opts.idx_labels)
+# 		basename = os.path.splitext(os.path.basename(name))[0]
+# 		path = opts.out_folder + basename
+# 		print "[saving data @ {}]".format(path)
+# 		with open(path, "wb") as fid:
+# 			cPickle.dump([X, Y, vocab, label_map], fid, -1)
+# 	return vocab
+
+
+def get_vocabularies(text_path, label_paths, max_words=None):	
+	"""
+		compute vocabulary using the texts from users only considering the users from a specific set of labeled datasets
+
+		text_path: path to a file with all the text from a user in the format: USER TAB TEXT
+		label_paths: list of paths to files with the labels in the format: LABEL USER
+
+	"""
+	
 	text_data = read_dataset(text_path)	
-	#index dataset per user
+	#index tweets per user
 	text_by_user = {x[0]:x[1] for x in text_data}	
+	#read the labeled sets
+	datasets = []
 	for fname in label_paths:		
-		ds = read_dataset(fname)		
-		# print ds
+		ds = read_dataset(fname)				
 		datasets.append(ds)
 	vocab_datasets = [x[1] for x in flatten_list(datasets)]	
 	vocab_docs = [text_by_user[x] for x in vocab_datasets]	
-	vocab = build_vocabulary(vocab_docs, max_words=max_words)
-	return vocab
-
+	words_vocab = build_vocabulary(vocab_docs, max_words=max_words)
+	users_vocab = build_vocabulary([x for x in vocab_datasets])
+	return words_vocab, users_vocab
 
 def vectorize(dataset, vocabulary, idx_labels=True):
 	docs = [x[1] for x in dataset]
@@ -46,24 +73,39 @@ def vectorize(dataset, vocabulary, idx_labels=True):
 		Y = [float(l) for l in labels]
 	return X, Y, label2idx
 
-def main(fnames, vocab, opts):
+def main(text_path, label_paths, word_vocab, user_vocab, opts):
 	#read data
-	datasets = []
-	for fname in fnames:
+	text_data = read_dataset(text_path)	
+	#index tweets per user
+	text_by_user = {x[0]:x[1] for x in text_data}	
+	document_datasets = []
+	user_datasets = []
+	for fname in label_paths:
 		print "[reading data @ {}]".format(repr(fname))
-		ds = read_dataset(fname, labels=opts.labels)
-		datasets.append(ds)	
+		ds_users = read_dataset(fname, labels=opts.labels)
+		ds_docs = [[y,text_by_user[u]] for y,u in ds_users]
+		user_datasets.append(ds_users)
+		document_datasets.append(ds_docs)		
 	#vectorize
 	print "[vectorizing documents]"
-	for name, ds in zip(fnames, datasets):
-		X, Y, label_map = vectorize(ds, vocab, opts.idx_labels)
+	for name, ds in zip(label_paths, document_datasets):
+		X, Y, label_map = vectorize(ds, word_vocab, opts.idx_labels)
 		basename = os.path.splitext(os.path.basename(name))[0]
 		path = opts.out_folder + basename
 		print "[saving data @ {}]".format(path)
 		with open(path, "wb") as fid:
-			cPickle.dump([X, Y, vocab, label_map], fid, -1)
-	return vocab
-
+			cPickle.dump([X, Y, word_vocab, label_map], fid, -1)
+	
+	print "[vectorizing users]"
+	for name, ds in zip(label_paths, user_datasets):
+		X, Y, label_map = vectorize(ds, user_vocab, opts.idx_labels)
+		basename = os.path.splitext(os.path.basename(name))[0]
+		path = opts.out_folder + "users_" + basename
+		print "[saving data @ {}]".format(path)
+		with open(path, "wb") as fid:
+			cPickle.dump([X, Y, user_vocab, label_map], fid, -1)
+	
+	
 def get_parser():
 	par = argparse.ArgumentParser(description="Extract Indices")
 	par.add_argument('-labels_path', type=str, required=True, nargs='+', help='labeled data in the format: label TAB user_id')
@@ -102,26 +144,25 @@ if __name__ == "__main__":
 		# args.labels_path
 		print "[computing vocabulary]"
 		if args.vocab_from is not None:
-			vocabulary = get_vocabulary(args.text_path, args.vocab_from, args.vocab_size)
+			word_vocabulary, user_vocabulary = get_vocabularies(args.text_path, args.vocab_from, args.vocab_size)
 		else:
-			vocabulary = get_vocabulary(args.text_path, args.labels_path[0], args.vocab_size)
-		set_trace()
-		main(all_fnames, vocabulary, args)
+			word_vocabulary, user_vocabulary = get_vocabularies(args.text_path, args.labels_path[0], args.vocab_size)
+		main(args.text_path, args.labels_path, word_vocabulary, user_vocabulary, args)
 	else:
 		assert args.cv > 2, "need at leat 2 folds for cross-validation"
-		for cv_fold in xrange(1, args.cv+1):
-			if args.cv_from is None:
-				cv_fnames = [f+"_"+str(cv_fold) for f in args.input]
-			else:
-				cv_fnames = [f + "_" + str(cv_fold) for f in args.cv_from]
-			print "[computing vocabulary]"
-			if args.vocab_from is not None:
-				cv_vocab_fnames = [f+"_"+str(cv_fold) for f in args.vocab_from]				
-				vocabulary = get_vocabulary(cv_vocab_fnames, args.vocab_size)
-			else:
-				vocabulary = get_vocabulary([args.cv_fnames[0]], args.vocab_size)
+		# for cv_fold in xrange(1, args.cv+1):
+		# 	if args.cv_from is None:
+		# 		cv_fnames = [f+"_"+str(cv_fold) for f in args.input]
+		# 	else:
+		# 		cv_fnames = [f + "_" + str(cv_fold) for f in args.cv_from]
+		# 	print "[computing vocabulary]"
+		# 	if args.vocab_from is not None:
+		# 		cv_vocab_fnames = [f+"_"+str(cv_fold) for f in args.vocab_from]				
+		# 		vocabulary = get_vocabulary(cv_vocab_fnames, args.vocab_size)
+		# 	else:
+		# 		vocabulary = get_vocabulary([args.cv_fnames[0]], args.vocab_size)
 
-			main(cv_fnames, vocabulary, args)						
+		# 	main(cv_fnames, vocabulary, args)						
 			
 	#extract embeddings
 	if args.embeddings is not None:
@@ -129,4 +170,4 @@ if __name__ == "__main__":
 			print "[reading embeddings @ {}]".format(vecs_in)
 			vecs_out = args.out_folder + os.path.basename(vecs_in)
 			print "[saving embeddings @ {}]".format(vecs_out)
-			embeddings.filter_embeddings(vecs_in, vecs_out, vocabulary)
+			embeddings.filter_embeddings(vecs_in, vecs_out, word_vocabulary)

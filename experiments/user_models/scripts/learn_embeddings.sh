@@ -1,93 +1,22 @@
-#corpora paths
-TWITTER_CORPUS="/Users/samir/Dev/resources/datasets/owoputi/raw_tweets.txt"
-#TWITTER_CORPUS="/home/ubuntu/efs/work/datasets/owoputi_preprocessed.txt"
-#USER_CORPUS="DATA/raw_datasets/mental_health/txt/corpus.txt"
-#USER_CORPUS="experiments/user_models/mental_health/DATA/txt/user_corpus.txt"
 
-#USER_CORPUS_BOWS="DATA/raw_datasets/mental_health/txt/user_bows.txt"
-USER_CORPUS_BOWS="experiments/user_models/mental_health/DATA/txt/user_bows.txt"
-
-WORD_EMBEDDINGS="DATA/embeddings/SG.txt"
-#configs
+echo $RED"##### TRAIN USER EMBEDDINGS #####"$COLOR_OFF
 WORKERS=2
 NEGATIVE_SAMPLES=20
 MIN_COUNT=10
 VECTOR_DIM=50
 # embeddings output
-EMBEDDINGS_OUT="experiments/user_models/mental_health/DATA/embeddings_"$VECTOR_DIM
-rm -rf $EMBEDDINGS_OUT
-echo "#############################"
-echo " TRAIN P2V"
-echo "#############################"
-PV_EPOCHS=2
-python ASMAT/toolkit/gensimer.py -input $USER_CORPUS_BOWS \
-									-output $EMBEDDINGS_OUT"/PV-DM" \
-									-dim $VECTOR_DIM \
-									-model "pv-dm" \
-									-negative $NEGATIVE_SAMPLES \
-									-min_count=$MIN_COUNT \
-									-epochs $PV_EPOCHS \
-									-workers $WORKERS 
-exit
-
-# python ASMAT/toolkit/gensimer.py -input $USER_CORPUS_BOWS \
-# 									-output $EMBEDDINGS_OUT"/PV-DBOW" \
-# 									-dim $VECTOR_DIM \
-# 									-model "pv-dbow" \
-# 									-negative $NEGATIVE_SAMPLES \
-# 									-min_count=$MIN_COUNT \
-# 									-epochs $PV_EPOCHS \
-# 									-workers $WORKERS 
- 									 
-# echo "#############################"
-# echo " TRAIN W2V"
-# echo "#############################"
-
-# python ASMAT/toolkit/gensimer.py -input $USER_CORPUS_BOWS $TWITTER_CORPUS \
-# 									-out $EMBEDDINGS_OUT"/SG" \
-# 									-dim $VECTOR_DIM \
-# 									-model "skip" \
-# 									-negative $NEGATIVE_SAMPLES \
-# 									-min_count=$MIN_COUNT \
-# 									-epochs 5 \
-# 									-workers $WORKERS 
-
-echo "#############################"
-echo " USER 2 VEC "
-echo "#############################"
-
-# #modules
-# U2V_PATH="/home/ubuntu/efs/work/projects/usr2vec/code"
-# U2V_PATH="/Users/samir/Dev/projects/usr2vec/code"
-# U2V_PATH="ASMAT/models/user2vec"
-
-# #u2v intermediate files
-# U2V_DATA="DATA/pkl/u2v_data.pkl"
-# U2V_DATA_AUX="DATA/pkl/u2v_data_aux.pkl"
-
-# ### ACTION!
-# build=1
-# if (($build > 0 )); then
-# 	# "DATA/txt/small_user_BOWS.txt"
-# 	# -emb $EMBEDDINGS_OUT"/SG.txt" \
-# 	printf "\n#### Build Training Data #####\n"	
-# 	python $U2V_PATH"/build_train.py" -input $CORPUS \
-# 								 	  -emb $WORD_EMBEDDINGS \
-# 								 	  -output ${U2V_DATA} \
-# 								 	  -min_word_freq $MIN_COUNT\
-# 								 	  -neg_samples $NEGATIVE_SAMPLES	
-# fi
-# U2V_EPOCHS=5
-# printf "\n##### U2V training #####\n"
-# python $U2V_PATH"/train_u2v.py" -input ${U2V_DATA} \
-# 								  -aux ${U2V_DATA_AUX} \
-# 								  -output $EMBEDDINGS_OUT/"U2V" \
-# 					 			  -patience 5 \
-# 								  -margin 1 \
-# 								  -epochs $U2V_EPOCHS \
-# 								  -reshuff
-
-# exit
-
+# EMBEDDINGS_OUT=$USER_EMBEDDINGS
+# rm -rf $EMBEDDINGS_OUT
+PV_EPOCHS=5
+#$EMBEDDINGS_OUT"/PV-DM_"$VECTOR_DIM \
+python ASMAT/toolkit/gensimer.py -input $DATA"/txt/"$TWEETS \
+								-output $USER_EMBEDDINGS \
+								-dim $VECTOR_DIM \
+								-model "pv-dm" \
+								-negative $NEGATIVE_SAMPLES \
+								-min_count=$MIN_COUNT \
+								-epochs $PV_EPOCHS \
+								-workers $WORKERS 
+								# -pretrained_vecs $WORD_EMBEDDINGS
 
 

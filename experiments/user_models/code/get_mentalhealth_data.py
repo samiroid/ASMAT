@@ -19,7 +19,7 @@ if not os.path.exists(output):
 tweets_by_user = {}
 print "[reading user tweets]"
 z=0
-MAX_USERS=10
+MAX_USERS=100
 MIN_TWEETS=100
 for fname in os.listdir(path_train):	
 	if os.path.splitext(path_train+fname)[1]!=".gz":

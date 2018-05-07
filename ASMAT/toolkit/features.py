@@ -25,29 +25,22 @@ def run(inputs, opts):
 					fname = basename + "-BOW-" + agg.upper()
 					print "\t > BOW ({})".format(fname)
 					if agg == "bin":
-						bow = features.BOW(X, vocabulary)
+						bow = features.BOW(X, vocabulary, opts.sparse_bow)
 					elif agg == "freq":
-						bow = features.BOW_freq(X, vocabulary)
-					np.save(opts.out_folder + fname, bow)
-					# print "\t > {}".format(repr(bow))
-					# print len(X), bow.shape
+						bow = features.BOW_freq(X, vocabulary, opts.sparse_bow)
+					np.save(opts.out_folder + fname, bow)					
 			if opts.boe is not None:
 				for agg in opts.boe:
 					fname = basename + "-BOE-" + agg.upper()
 					print "\t > BOE ({})".format(fname)
 					E, _ = embeddings.read_embeddings(opts.embeddings, wrd2idx=vocabulary)
 					boe = features.BOE(X, E, agg=agg)
-					# print boe.shape
+					
 					np.save(opts.out_folder + fname, boe)
 			if opts.nlse:
-				fname = basename + "_NLSE.pkl"
-				# X, Y, st, ed = features.NLSE(X, Y)
+				fname = basename + "_NLSE.pkl"				
 				E, _ = embeddings.read_embeddings(opts.embeddings, wrd2idx=vocabulary)
 				np.save(fname, E)
-				# with open(opts.out_folder + fname, "w") as fod:
-				# 	cPickle.dump([X, Y, vocabulary, label_map, E, st, ed],
-				# 	             fod, cPickle.HIGHEST_PROTOCOL)
-
 
 def get_parser():
 	par = argparse.ArgumentParser(description="Extract Features")
@@ -56,6 +49,7 @@ def get_parser():
 	par.add_argument('-bow', type=str, choices=['bin', 'freq'], nargs='+', help='bow features')
 	par.add_argument('-boe', type=str, choices=['bin', 'sum'], nargs='+', help='boe features')
 	par.add_argument('-nlse', action="store_true")
+	par.add_argument('-sparse_bow', action="store_true")
 	par.add_argument('-cv', type=int, help='crossfold')
 	par.add_argument('-cv_from', type=str, nargs='*', \
 					help="files for crossvalidation")

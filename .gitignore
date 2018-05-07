@@ -94,3 +94,4 @@ experiments/asma/server_results/*
 notebook/*
 old_experiments/*
 dbg/*
+/RAW_DATA/*
