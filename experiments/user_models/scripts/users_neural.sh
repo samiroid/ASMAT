@@ -20,30 +20,35 @@ DATASET=$2
 
 if [ -z "$3" ]
   then
-	RESFILE="user_models.txt"
-	echo "default results file: " $RESFILE
-else
-	RESFILE=$3
+    echo "please provide word embeddings file"
+    exit 1
 fi
+WORD_EMBS=$3
 
 if [ -z "$4" ]
   then
-	EMB_FILE="str_skip_50.txt"
-	echo "default embeddings file: " $EMB_FILE
-else
-	EMB_FILE=$4
-	echo "embeddings: " $EMB_FILE
+    echo "please provide user embeddings file"
+    exit 1
 fi
 
+USER_EMBS=$4
 if [ -z "$5" ]
   then
-	RUN_ID=$EMB_FILE
+	RESFILE="user_models.txt"
+	echo "default results file: " $RESFILE
+else
+	RESFILE=$5
+fi
+
+if [ -z "$7" ]
+  then
+	RUN_ID=$WORD_EMBS
 	echo "default RUN ID"
 else
-	RUN_ID=$5
+	RUN_ID=$7
 fi
 #config
-PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
+PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -54,22 +59,25 @@ DEV=$DATASET"_dev"
 TEST=$DATASET"_test"
 #TWEETS=$DATASET"_users_tweets"
 #USER_EMBEDDINGS=$DATA/"embeddings/U2V"
+#USER_EMBEDDINGS=$NEURAL_FEATURES"/embeddings/U2V_"$DATASET
+#WORD_EMBEDDINGS_INPUT="RAW_DATA/embeddings/"$EMB_FILE
 
-WORD_EMBEDDINGS_INPUT="RAW_DATA/embeddings/"$EMB_FILE
-WORD_EMBEDDINGS=$NEURAL_FEATURES"/"$DATASET"_"$EMB_FILE
-
-USER_EMBEDDINGS=$NEURAL_FEATURES"/embeddings/U2V_"$DATASET
+USER_EMBEDDINGS=$PROJECT_PATH"/DATA/embeddings/"$USER_EMBS
+WORD_EMBEDDINGS_INPUT="RAW_DATA/embeddings/"$WORD_EMBS
+WORD_EMBEDDINGS=$NEURAL_FEATURES"/"$DATASET"_"$WORD_EMBS
 
 NLSE_HYPERPARAMS=$PROJECT_PATH"/confs/nlse.cfg"
 LINEAR_HYPERPARAMS=$PROJECT_PATH"/confs/linear.cfg"
 
+echo "word embeddingd @" $WORD_EMBEDDINGS_INPUT
+echo "user embeddingd @" $USER_EMBEDDINGS
+
 echo "NEURAL SMA > " $DATASET
 #OPTIONS
 CLEAN=0
-EXTRACT=1
-TRAIN_U2V=1
-GET_FEATURES=1
-LINEAR_MODELS=1
+EXTRACT=0
+GET_FEATURES=0
+LINEAR_MODELS=0
 NLSE=1
 HYPERPARAM=0
 if (($CLEAN > 0)); then
@@ -97,8 +105,7 @@ if (($EXTRACT > 0)); then
 									-out_folder $NEURAL_FEATURES \
 									-embeddings $WORD_EMBEDDINGS_INPUT 
 	#word embeddings file only with the words on this vocabulary
-	mv $NEURAL_FEATURES"/"$EMB_FILE $WORD_EMBEDDINGS
-
+	mv $NEURAL_FEATURES"/"$WORD_EMBS $WORD_EMBEDDINGS
 fi
 
 ### COMPUTE FEATURES ###
@@ -113,13 +120,13 @@ if (($GET_FEATURES > 0)); then
 	python ASMAT/toolkit/features.py -input $NEURAL_FEATURES"/users_"$TRAIN $NEURAL_FEATURES"/users_"$DEV $NEURAL_FEATURES"/users_"$TEST \
 							-out_folder $NEURAL_FEATURES \
 							-boe bin \
-							-embeddings $USER_EMBEDDINGS".txt"	
+							-embeddings $USER_EMBEDDINGS
 fi
 
 ### LINEAR MODELS ###
 if (($LINEAR_MODELS > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF	
-	
+	#USER-LEVEL
 	python ASMAT/toolkit/linear_model.py -features BOE-BIN \
 										-run_id $RUN_ID \
 										-train $NEURAL_FEATURES"/users_"$TRAIN \
@@ -153,7 +160,7 @@ if (($NLSE > 0)); then
 							   		   -dev $NEURAL_FEATURES"/users_"$DEV \
                            	   		   -test $NEURAL_FEATURES"/users_"$TEST \
                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
-                           	   		   -emb $USER_EMBEDDINGS".txt" \
+                           	   		   -emb $USER_EMBEDDINGS \
                                		   -run_id $RUN_ID\
                            	   		   -res_path $RESULTS \
 									   -sub_size 10 \
