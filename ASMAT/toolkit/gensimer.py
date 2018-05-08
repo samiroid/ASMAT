@@ -1,7 +1,10 @@
 import argparse
 import cPickle
 from collections import Counter
-from ipdb import set_trace
+try:
+	from ipdb import set_trace
+except ImportError:
+	from pdb import set_trace
 from ASMAT.lib import embeddings
 #from embeddings import save_embeddings
 import gensim
