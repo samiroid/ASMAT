@@ -13,11 +13,17 @@ output= 'experiments/user_models/DATA/txt/'
 age_dataset = []
 gender_dataset = []
 race_dataset = []
-
+MAX_USERS=100
+MAX_USERS=float('inf')
 print "[reading labels]"
 with open(data_path) as fid:
 	fid.next()
+	i=0
 	for l in fid:
+		i+=1
+		if i>=MAX_USERS: 
+			print "break early"
+			break
 		user, gender, age, race = l.replace("\n","").split("\t")
 		age_dataset.append([age, user])
 		gender_dataset.append([gender, user])

@@ -22,7 +22,7 @@ def run(inputs, opts):
 			basename = os.path.splitext(os.path.basename(dataset))[0]			
 			if opts.bow is not None:
 				for agg in opts.bow:
-					fname = basename + "-BOW-" + agg.upper()
+					fname = basename + "-bow-" + agg.lower()
 					print "\t > BOW ({})".format(fname)
 					if agg == "bin":
 						bow = features.BOW(X, vocabulary, opts.sparse_bow)
@@ -31,12 +31,23 @@ def run(inputs, opts):
 					np.save(opts.out_folder + fname, bow)					
 			if opts.boe is not None:
 				for agg in opts.boe:
-					fname = basename + "-BOE-" + agg.upper()
+					fname = basename + "-boe-" + agg.lower()
 					print "\t > BOE ({})".format(fname)
 					E, _ = embeddings.read_embeddings(opts.embeddings, wrd2idx=vocabulary)
-					boe = features.BOE(X, E, agg=agg)
-					
+					boe = features.BOE(X, E, agg=agg)					
 					np.save(opts.out_folder + fname, boe)
+			if opts.w2v:				
+				fname = basename + "-w2v"
+				print "\t > W2V ({})".format(fname)
+				E, _ = embeddings.read_embeddings(opts.embeddings, wrd2idx=vocabulary)
+				emb = features.BOE(X, E, agg="bin")					
+				np.save(opts.out_folder + fname, emb)
+			if opts.u2v:				
+				fname = basename + "-u2v"
+				print "\t > u2v ({})".format(fname)
+				E, _ = embeddings.read_embeddings(opts.embeddings, wrd2idx=vocabulary)
+				emb = features.BOE(X, E, agg="bin")					
+				np.save(opts.out_folder + fname, emb)
 			if opts.nlse:
 				fname = basename + "_NLSE.pkl"				
 				E, _ = embeddings.read_embeddings(opts.embeddings, wrd2idx=vocabulary)
@@ -48,6 +59,8 @@ def get_parser():
 	par.add_argument('-out_folder', type=str, required=True, help='output folder')
 	par.add_argument('-bow', type=str, choices=['bin', 'freq'], nargs='+', help='bow features')
 	par.add_argument('-boe', type=str, choices=['bin', 'sum'], nargs='+', help='boe features')
+	par.add_argument('-u2v', action="store_true", help='(single) user embedding feature')
+	par.add_argument('-w2v', action="store_true", help='(single) word embedding feature')
 	par.add_argument('-nlse', action="store_true")
 	par.add_argument('-sparse_bow', action="store_true")
 	par.add_argument('-cv', type=int, help='crossfold')
@@ -60,7 +73,7 @@ def get_parser():
 if __name__ == "__main__":
 	parser = get_parser()
 	args = parser.parse_args()
-	assert args.bow is not None or args.boe is not None or args.nlse, "please, specify some features"
+	assert args.bow is not None or args.boe is not None or args.nlse or args.w2v or args.u2v, "please, specify some features"
 	if args.boe is not None or args.nlse:
 		assert args.embeddings is not None, "missing embeddings"
 

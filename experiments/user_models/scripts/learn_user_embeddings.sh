@@ -14,7 +14,7 @@ USER_EMBEDDINGS=$2
 
 echo $RED"##### TRAIN USER EMBEDDINGS #####"$COLOR_OFF
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
-PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
+# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
 
 
 WORKERS=8
@@ -27,7 +27,7 @@ VECTOR_DIM=200
 PV_EPOCHS=5
 #$EMBEDDINGS_OUT"/PV-DM_"$VECTOR_DIM \
 python ASMAT/toolkit/gensimer.py -input $PROJECT_PATH"/DATA/txt/"$DATASET \
-								-output $PROJECT_PATH"/DATA/embeddings/"$USER_EMBEDDINGS \
+								-output $PROJECT_PATH"/DATA/embeddings/"$USER_EMBEDDINGS"_"$VECTOR_DIM \
 								-dim $VECTOR_DIM \
 								-model "pv-dm" \
 								-negative $NEGATIVE_SAMPLES \

@@ -49,7 +49,7 @@ else
 fi
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
-PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
+# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -80,7 +80,7 @@ EXTRACT=1
 GET_WORD_FEATURES=1
 GET_USER_FEATURES=1
 LINEAR_MODELS=1
-NLSE=1
+NLSE=0
 HYPERPARAM=0
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
@@ -122,11 +122,11 @@ if (($GET_WORD_FEATURES > 0)); then
 fi
 
 if (($GET_USER_FEATURES > 0)); then
-	echo $RED"##### GET WORD FEATURES ##### "$COLOR_OFF	
+	echo $RED"##### GET USER FEATURES ##### "$COLOR_OFF	
 	
 	python ASMAT/toolkit/features.py -input $NEURAL_FEATURES"/users_"$TRAIN $NEURAL_FEATURES"/users_"$DEV $NEURAL_FEATURES"/users_"$TEST \
 							-out_folder $NEURAL_FEATURES \
-							-boe bin \
+							-u2v \
 							-embeddings $USER_EMBEDDINGS
 fi
 
@@ -134,7 +134,7 @@ fi
 if (($LINEAR_MODELS > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF	
 	#USER-LEVEL
-	python ASMAT/toolkit/linear_model.py -features BOE-BIN \
+	python ASMAT/toolkit/linear_model.py -features u2v \
 										-run_id $RUN_ID \
 										-train $NEURAL_FEATURES"/users_"$TRAIN \
 										-test $NEURAL_FEATURES"/users_"$TEST \
@@ -142,7 +142,7 @@ if (($LINEAR_MODELS > 0)); then
 							 			-res_path $RESULTS \
 										-hyperparams_path $LINEAR_HYPERPARAMS
 										
-	python ASMAT/toolkit/linear_model.py -features BOE-BIN \
+	python ASMAT/toolkit/linear_model.py -features boe-bin \
 										-run_id $RUN_ID \
 										-train $NEURAL_FEATURES"/"$TRAIN \
 										-test $NEURAL_FEATURES"/"$TEST \
@@ -150,7 +150,7 @@ if (($LINEAR_MODELS > 0)); then
 							 			-res_path $RESULTS \
 										-hyperparams_path $LINEAR_HYPERPARAMS
 							 
-	python ASMAT/toolkit/linear_model.py -features BOE-SUM \
+	python ASMAT/toolkit/linear_model.py -features boe-sum \
 										-run_id $RUN_ID \
 										-train $NEURAL_FEATURES"/"$TRAIN \
 										-test $NEURAL_FEATURES"/"$TEST \

@@ -34,7 +34,7 @@ else
 fi
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
-PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
+# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 FEATURES=$DATA"/pkl/features"

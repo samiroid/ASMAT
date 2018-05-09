@@ -69,7 +69,7 @@ def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None):
                 "run_id":run_id,
                 "sub_size":hyperparams["sub_size"],
                 "lrate":hyperparams["lrate"]}
-    cols = ["dataset", "run_id", "model", "acc", "avgF1","sub_size"]
+    cols = ["dataset", "model", "run_id", "acc", "avgF1","sub_size"]
     helpers.print_results(results,columns=["dataset","run_id","lrate","sub_size","acc","avgF1"])
     if res_path is not None:
         helpers.save_results(results, res_path, sep="\t", columns=cols)
