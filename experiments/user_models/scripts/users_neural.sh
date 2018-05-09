@@ -49,6 +49,7 @@ else
 fi
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
+PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -75,9 +76,10 @@ echo "user embeddingd @" $USER_EMBEDDINGS
 echo "NEURAL SMA > " $DATASET
 #OPTIONS
 CLEAN=0
-EXTRACT=0
-GET_FEATURES=0
-LINEAR_MODELS=0
+EXTRACT=1
+GET_WORD_FEATURES=1
+GET_USER_FEATURES=1
+LINEAR_MODELS=1
 NLSE=1
 HYPERPARAM=0
 if (($CLEAN > 0)); then
@@ -109,13 +111,18 @@ if (($EXTRACT > 0)); then
 fi
 
 ### COMPUTE FEATURES ###
-if (($GET_FEATURES > 0)); then
-	echo $RED"##### GET FEATURES ##### "$COLOR_OFF
+if (($GET_WORD_FEATURES > 0)); then
+	echo $RED"##### GET WORD FEATURES ##### "$COLOR_OFF
 	#BOE	
 	python ASMAT/toolkit/features.py -input $NEURAL_FEATURES"/"$TRAIN $NEURAL_FEATURES"/"$DEV $NEURAL_FEATURES"/"$TEST \
 							-out_folder $NEURAL_FEATURES \
 							-boe bin sum \
 							-embeddings $WORD_EMBEDDINGS	
+
+fi
+
+if (($GET_USER_FEATURES > 0)); then
+	echo $RED"##### GET WORD FEATURES ##### "$COLOR_OFF	
 	
 	python ASMAT/toolkit/features.py -input $NEURAL_FEATURES"/users_"$TRAIN $NEURAL_FEATURES"/users_"$DEV $NEURAL_FEATURES"/users_"$TEST \
 							-out_folder $NEURAL_FEATURES \
@@ -153,7 +160,6 @@ if (($LINEAR_MODELS > 0)); then
 	
 fi
 
-
 if (($NLSE > 0)); then
 	echo $RED"##### NLSE ##### "$COLOR_OFF
 	python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/users_"$TRAIN \
@@ -164,8 +170,8 @@ if (($NLSE > 0)); then
                                		   -run_id $RUN_ID\
                            	   		   -res_path $RESULTS \
 									   -sub_size 10 \
-									   -lrate 0.01 \
-									   -n_epoch 20 \
+									   -lrate 0.1 \
+									   -n_epoch 30 \
 									   -patience 20 
 									#    \
 									#    -hyperparams_path $NLSE_HYPERPARAMS

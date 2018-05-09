@@ -19,8 +19,8 @@ if not os.path.exists(output):
 tweets_by_user = {}
 print "[reading user tweets]"
 z=0
-MAX_USERS=100
-MIN_TWEETS=100
+MAX_USERS=10
+MIN_TWEETS=200
 for fname in os.listdir(path_train):	
 	if os.path.splitext(path_train+fname)[1]!=".gz":
 			print "ignored %s"% fname 
@@ -33,19 +33,27 @@ for fname in os.listdir(path_train):
 			print "ignored user %s | %d tweets" % (user, len(data))
 			continue		
 		tweets_by_user[user] = set(data)
-		z+=1	
+		# z+=1	
 	sys.stdout.write("\ruser: "+user+" ("+ str(z) +")"+" "*20)
 	sys.stdout.flush()
 	if z>=MAX_USERS:
 		print "out early!!!!"
 		break	
-user_corpus = codecs.open(output+"mental_health_users_tweets","w","utf-8")
+user_corpus = codecs.open(output+"mental_health_tweets","w","utf-8")
 print "[writing user tweets]"
 for user, twt in tweets_by_user.items():
 	# set_trace()
 	tweets = ' '.join(twt)
 	tweets = ' '.join(tweets.split())
 	user_corpus.write(u"{}\t{}\n".format(user, tweets))
+
+user_corpus = codecs.open(output+"word_embeddings_corpus","w","utf-8")
+
+print "[writing tweets for word embedding training]"
+for user, twt in tweets_by_user.items():
+	# set_trace()
+	tweets = '\n'.join(twt)	
+	user_corpus.write(u"{}\n".format(tweets))
 
 print "[reading training labels]"
 train_labels = {}

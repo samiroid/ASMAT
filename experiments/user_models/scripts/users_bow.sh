@@ -34,6 +34,7 @@ else
 fi
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
+PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 FEATURES=$DATA"/pkl/features"
@@ -84,8 +85,7 @@ if (($GET_FEATURES > 0)); then
 	#BOE	
 	python ASMAT/toolkit/features.py -input $FEATURES"/"$TRAIN $FEATURES"/"$DEV $FEATURES"/"$TEST \
 							-out_folder $FEATURES \
-							-bow bin freq \
-							-sparse_bow
+							-bow bin freq							
 fi
 
 ### LINEAR MODELS ###
