@@ -33,8 +33,8 @@ else
 	RUN_ID=$4
 fi
 #config
-PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
-# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
+# PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
+PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 FEATURES=$DATA"/pkl/features"
@@ -92,7 +92,7 @@ fi
 if (($LINEAR_MODELS > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF	
 	
-	python ASMAT/toolkit/linear_model.py -features BOW-BIN \
+	python ASMAT/toolkit/linear_model.py -features bow-bin \
 										-run_id $RUN_ID \
 										-train $FEATURES"/"$TRAIN \
 										-test $FEATURES"/"$TEST \
@@ -100,7 +100,7 @@ if (($LINEAR_MODELS > 0)); then
 							 			-res_path $RESULTS \
 										-hyperparams_path $LINEAR_HYPERPARAMS
 							 
-	python ASMAT/toolkit/linear_model.py -features BOW-FREQ	 \
+	python ASMAT/toolkit/linear_model.py -features bow-freq	 \
 										-run_id $RUN_ID \
 										-train $FEATURES"/"$TRAIN \
 										-test $FEATURES"/"$TEST \

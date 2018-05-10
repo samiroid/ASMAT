@@ -1,5 +1,5 @@
 set -e
-VECTOR_DIM=200
+VECTOR_DIM=400
 
 #get datasets
 ./experiments/user_models/scripts/get_data_demographics.sh
@@ -12,7 +12,7 @@ DATA="demos_age demos_gender demos_race"
 for ds in $DATA; 
 do
     #neurals > tweets labels word_embeddings user_embeddings results 
-    ./experiments/user_models/scripts/users_neural.sh demos_tweets $ds str_skip_50.txt "demographics_u2v_"$VECTOR_DIM".txt" "demographics_"$VECTOR_DIM".txt"
+    ./experiments/user_models/scripts/users_neural.sh demos_tweets $ds cohort_word_embeddings.txt "demographics_u2v_"$VECTOR_DIM".txt" "demographics_"$VECTOR_DIM".txt"
 done
 
 for ds in $DATA; 

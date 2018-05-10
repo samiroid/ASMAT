@@ -13,14 +13,14 @@ fi
 USER_EMBEDDINGS=$2
 
 echo $RED"##### TRAIN USER EMBEDDINGS #####"$COLOR_OFF
-PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
-# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
+# PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
+PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
 
 
 WORKERS=8
 NEGATIVE_SAMPLES=20
 MIN_COUNT=10
-VECTOR_DIM=200
+VECTOR_DIM=400
 # embeddings output
 # EMBEDDINGS_OUT=$USER_EMBEDDINGS
 # rm -rf $EMBEDDINGS_OUT
