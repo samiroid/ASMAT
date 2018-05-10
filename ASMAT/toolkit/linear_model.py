@@ -57,8 +57,8 @@ def hypertune(train, dev, features, obj, hyperparams, res_path=None):
 def main(train, test, run_id, features, hyperparameters={}, res_path=None):	
 	#train and evalute model	
 	if features[0] == "naive_bayes":
-		X_train, Y_train = get_features(train, ["BOW-BIN"])
-		X_test,  Y_test  = get_features(test, ["BOW-BIN"])	
+		X_train, Y_train = get_features(train, ["bow-bin"])
+		X_test,  Y_test  = get_features(test, ["bow-bin"])	
 		model = BernoulliNB()
 		model_name = "NaiveBayes"
 	else:

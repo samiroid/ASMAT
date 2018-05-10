@@ -68,11 +68,11 @@ def filter_embeddings(path_in, path_out, wrd2idx, max_words=None):
     with codecs.open(path_out,"w","utf-8") as fod:
         voc_size = len(wrd2idx)
         emb_size = w2v.values()[0].shape[0]   
-        fod.write(str(voc_size)+"\t"+str(emb_size)+"\n")
+        fod.write(unicode(voc_size)+"\t"+unicode(emb_size)+"\n")
         for word,emb in w2v.items():
             if word in wrd2idx:
                 del ooevs[word]                
-                fod.write("%s %s\n" % (word, " ".join(map(str, emb))))
+                fod.write(u"%s %s\n" % (word, " ".join(map(unicode, emb))))
         perc = len(ooevs)*100./len(wrd2idx)
         print ("%d/%d (%2.2f %%) words in vocabulary found no embedding" 
            % (len(ooevs), len(wrd2idx), perc)) 
@@ -80,11 +80,11 @@ def filter_embeddings(path_in, path_out, wrd2idx, max_words=None):
         return ooevs
 
 def save_txt(path, E, wrd2idx):
-    with open(path,"w") as fod:
-        fod.write("%d %d\n" % (E.shape[1],E.shape[0]))  
+    with codecs.open(path,"w","utf-8") as fod:
+        fod.write(u"%d %d\n" % (E.shape[1],E.shape[0]))  
         for word, idx in wrd2idx.items():      
             emb = E[:,idx]
-            fod.write("%s %s\n" % (word, " ".join(map(str, emb))))
+            fod.write(u"%s %s\n" % (word, " ".join(map(unicode, emb))))
 
 
 def project_vectors(X_in, model='tsne', perp=10, n_components=2):    

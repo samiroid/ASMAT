@@ -19,7 +19,7 @@ DATASET=$2
 
 if [ -z "$3" ]
   then
-	RESFILE="user_models.txt"
+	RESFILE="user_models.tsv"
 	echo "default results file: " $RESFILE
 else
 	RESFILE=$3
@@ -33,8 +33,8 @@ else
 	RUN_ID=$4
 fi
 #config
-# PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
-PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
+PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
+# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 FEATURES=$DATA"/pkl/features"

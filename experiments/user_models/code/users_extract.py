@@ -100,7 +100,7 @@ def main(text_path, label_paths, word_vocab, user_vocab, opts):
 	for name, ds in zip(label_paths, user_datasets):
 		X, Y, label_map = vectorize(ds, user_vocab, opts.idx_labels)
 		basename = os.path.splitext(os.path.basename(name))[0]
-		path = opts.out_folder + "users_" + basename
+		path = opts.out_folder + basename + "_users"
 		print "[saving data @ {}]".format(path)
 		with open(path, "wb") as fid:
 			cPickle.dump([X, Y, user_vocab, label_map], fid, -1)

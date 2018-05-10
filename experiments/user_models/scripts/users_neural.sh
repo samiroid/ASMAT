@@ -34,7 +34,7 @@ fi
 USER_EMBS=$4
 if [ -z "$5" ]
   then
-	RESFILE="user_models.txt"
+	RESFILE="user_models.tsv"
 	echo "default results file: " $RESFILE
 else
 	RESFILE=$5
@@ -42,14 +42,14 @@ fi
 
 if [ -z "$7" ]
   then
-	RUN_ID=$WORD_EMBS
+	RUN_ID="NEURAL"
 	echo "default RUN ID"
 else
 	RUN_ID=$7
 fi
 #config
-# PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
-PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
+PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
+# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -124,7 +124,7 @@ fi
 if (($GET_USER_FEATURES > 0)); then
 	echo $RED"##### GET USER FEATURES ##### "$COLOR_OFF	
 	
-	python ASMAT/toolkit/features.py -input $NEURAL_FEATURES"/users_"$TRAIN $NEURAL_FEATURES"/users_"$DEV $NEURAL_FEATURES"/users_"$TEST \
+	python ASMAT/toolkit/features.py -input $NEURAL_FEATURES"/"$TRAIN"_users" $NEURAL_FEATURES"/"$DEV"_users" $NEURAL_FEATURES"/"$TEST"_users" \
 							-out_folder $NEURAL_FEATURES \
 							-u2v \
 							-embeddings $USER_EMBEDDINGS
@@ -136,9 +136,9 @@ if (($LINEAR_MODELS > 0)); then
 	#USER-LEVEL
 	python ASMAT/toolkit/linear_model.py -features u2v \
 										-run_id $RUN_ID \
-										-train $NEURAL_FEATURES"/users_"$TRAIN \
-										-test $NEURAL_FEATURES"/users_"$TEST \
-										-dev $NEURAL_FEATURES"/users_"$DEV \
+										-train $NEURAL_FEATURES"/"$TRAIN"_users" \
+										-test $NEURAL_FEATURES"/"$TEST"_users" \
+										-dev $NEURAL_FEATURES"/"$DEV"_users" \
 							 			-res_path $RESULTS \
 										-hyperparams_path $LINEAR_HYPERPARAMS
 										
@@ -162,17 +162,17 @@ fi
 
 if (($NLSE > 0)); then
 	echo $RED"##### NLSE ##### "$COLOR_OFF
-	python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/users_"$TRAIN \
-							   		   -dev $NEURAL_FEATURES"/users_"$DEV \
-                           	   		   -test $NEURAL_FEATURES"/users_"$TEST \
+	python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/"$TRAIN"users_" \
+							   		   -dev $NEURAL_FEATURES"/"$DEV"users_" \
+                           	   		   -test $NEURAL_FEATURES"/"$TEST"users_" \
                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
                            	   		   -emb $USER_EMBEDDINGS \
                                		   -run_id $RUN_ID\
                            	   		   -res_path $RESULTS \
 									   -sub_size 10 \
-									   -lrate 0.1 \
-									   -n_epoch 30 \
-									   -patience 20 
+									   -lrate 0.01 \
+									   -n_epoch 10 \
+									   -patience 10 
 									#    \
 									#    -hyperparams_path $NLSE_HYPERPARAMS
 
