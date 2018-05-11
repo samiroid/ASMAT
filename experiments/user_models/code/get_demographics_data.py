@@ -32,13 +32,13 @@ with open(data_path) as fid:
 print "[saving age dataset]"
 tmp_set, test_set = shuffle_split(age_dataset)
 train_set, dev_set = shuffle_split(tmp_set)
-with open(output+"demos_age_train","w") as fod:
+with open(output+"age_train","w") as fod:
 	for label, user in train_set:						
 		fod.write("{}\t{}\n".format(label, user))
-with open(output+"demos_age_test","w") as fod:
+with open(output+"age_test","w") as fod:
 	for label, user in test_set:						
 		fod.write("{}\t{}\n".format(label, user))
-with open(output+"demos_age_dev","w") as fod:
+with open(output+"age_dev","w") as fod:
 	for label, user in dev_set:						
 		fod.write("{}\t{}\n".format(label, user))
 
@@ -46,26 +46,26 @@ with open(output+"demos_age_dev","w") as fod:
 print "[saving gender dataset]"
 tmp_set, test_set = shuffle_split(gender_dataset)
 train_set, dev_set = shuffle_split(tmp_set)
-with open(output+"demos_gender_train","w") as fod:
+with open(output+"gender_train","w") as fod:
 	for label, user in train_set:						
 		fod.write("{}\t{}\n".format(label, user))
-with open(output+"demos_gender_test","w") as fod:
+with open(output+"gender_test","w") as fod:
 	for label, user in test_set:						
 		fod.write("{}\t{}\n".format(label, user))
-with open(output+"demos_gender_dev","w") as fod:
+with open(output+"gender_dev","w") as fod:
 	for label, user in dev_set:						
 		fod.write("{}\t{}\n".format(label, user))
 
 print "[saving race dataset]"
 tmp_set, test_set = shuffle_split(race_dataset)
 train_set, dev_set = shuffle_split(tmp_set)
-with open(output+"demos_race_train","w") as fod:
+with open(output+"race_train","w") as fod:
 	for label, user in train_set:						
 		fod.write("{}\t{}\n".format(label, user))
-with open(output+"demos_race_test","w") as fod:
+with open(output+"race_test","w") as fod:
 	for label, user in test_set:						
 		fod.write("{}\t{}\n".format(label, user))
-with open(output+"demos_race_dev","w") as fod:
+with open(output+"race_dev","w") as fod:
 	for label, user in dev_set:						
 		fod.write("{}\t{}\n".format(label, user))
 

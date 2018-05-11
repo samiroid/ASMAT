@@ -9,7 +9,7 @@ WORD_EMBEDDINGS="cohort_word_embeddings.txt"
 #learn user embeddings > dataset embedding_filename
 ./experiments/user_models/scripts/learn_user_embeddings.sh $TWEETS $USER_EMBEDDINGS 
 
-DATA="demos_age demos_gender demos_race"
+DATA="age gender race"
 
 for ds in $DATA; 
 do
