@@ -19,7 +19,7 @@ tweets_by_user = {}
 print "[reading user tweets]"
 z=0
 MAX_USERS=100
-MAX_USERS=float('inf')
+# MAX_USERS=float('inf')
 MIN_TWEETS=100
 for fname in os.listdir(path_train):	
 	if os.path.splitext(path_train+fname)[1]!=".gz":
@@ -56,50 +56,73 @@ for user, twt in tweets_by_user.items():
 	user_corpus.write(u"{}\n".format(tweets))
 
 print "[reading training labels]"
-train_labels = {}
+ptsd = {}
+depression = {}
 with open(train_labels_path) as fid:
 	f = csv.reader(fid)
 	f.next() #skip the header
 	for r in f:
 		user = r[0]
-		cond = r[4]		
-		train_labels[user] = cond		
-#stratified split
-train_tuples = [[x[1],x[0]] for x in train_labels.items()]
-tmp_set, test_set = shuffle_split(train_tuples)
-train_set, dev_set = shuffle_split(tmp_set)
+		cond = r[4]
+		if cond == "ptsd":
+			ptsd[user] = cond
+		elif cond == "depression":
+			depression[user] = cond
+		elif cond == "control":
+			ptsd[user] = cond
+			depression[user] = cond
+		
 
-print "[writing training data]"
-with open(output+"mental_health_train","w") as fod:
-	for label, user in train_set:		
+#stratified split
+ptsd_tuples = [[x[1],x[0]] for x in ptsd.items()]
+tmp_set, ptsd_test = shuffle_split(ptsd_tuples)
+ptsd_train, ptsd_dev = shuffle_split(tmp_set)
+
+depression_tuples = [[x[1],x[0]] for x in depression.items()]
+tmp_set, depression_test = shuffle_split(depression_tuples)
+depression_train, depression_dev = shuffle_split(tmp_set)
+
+print "[writing PTSD data]"
+with open(output+"ptsd_train","w") as fod:
+	for label, user in ptsd_train:		
 		if user not in tweets_by_user: 
 			# print "unknown dude %s" % user		
 			continue
-		if label not in ('ptsd','depression','control'):
-			# print "unknown condition:%s (user:%s)" % (label,user)
-			continue
-		print "train > x: {} | y: {}".format(user, label)
 		fod.write("{}\t{}\n".format(label, user))
 		
-with open(output+"mental_health_test","w") as fod:
-	for label, user in test_set:
+with open(output+"ptsd_test","w") as fod:
+	for label, user in ptsd_test:
 		if user not in tweets_by_user: 
 			# print "unknown dude %s" % user		
-			continue
-		if label not in ('ptsd','depression','control'):
-			# print "unknown condition:%s (user:%s)" % (label,user)
-			continue
-		print "test > x: {} | y: {}".format(user, label)
-		fod.write("{}\t{}\n".format(label, user))
-		
-with open(output+"mental_health_dev","w") as fod:
-	for label, user in dev_set:		
-		if user not in tweets_by_user: 
-			# print "unknown dude %s" % user		
-			continue
-		if label not in ('ptsd','depression','control'):
-			# print "unknown condition:%s (user:%s)" % (label,user)
 			continue		
-		print "dev > x: {} | y: {}".format(user, label)
+		fod.write("{}\t{}\n".format(label, user))
+		
+with open(output+"ptsd_dev","w") as fod:
+	for label, user in ptsd_dev:		
+		if user not in tweets_by_user: 
+			# print "unknown dude %s" % user		
+			continue		
+		fod.write("{}\t{}\n".format(label, user))
+		
+print "[writing DEPRESSION data]"
+with open(output+"depression_train","w") as fod:
+	for label, user in depression_train:		
+		if user not in tweets_by_user: 
+			# print "unknown dude %s" % user		
+			continue
+		fod.write("{}\t{}\n".format(label, user))
+		
+with open(output+"depression_test","w") as fod:
+	for label, user in depression_test:
+		if user not in tweets_by_user: 
+			# print "unknown dude %s" % user		
+			continue		
+		fod.write("{}\t{}\n".format(label, user))
+		
+with open(output+"depression_dev","w") as fod:
+	for label, user in depression_dev:		
+		if user not in tweets_by_user: 
+			# print "unknown dude %s" % user		
+			continue		
 		fod.write("{}\t{}\n".format(label, user))
 		

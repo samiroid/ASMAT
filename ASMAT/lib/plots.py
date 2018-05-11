@@ -22,11 +22,11 @@ MIN_BAR_DIFF = 0.015
 def plot_df(df, ax, x, ys, cols=None, 
             min_y=0, max_y=1, 
             ylabel=None, xlabel=None,
-           rot=0,stacked=False, width=0.8, leg=True, 
+           rot=0, width=0.8, leg=True, 
            annotation_size=None, min_y_diff=0.015):    
     
     df.plot(ax=ax,x=x,y=ys,kind="bar",color=cols, ylim=[min_y,max_y],label=ys,legend=True,
-            rot=rot,colormap=None,width=width,stacked=stacked,)
+            rot=rot,colormap=None,width=width)
     if ylabel is not None:
         ax.set_ylabel(ylabel)
     if xlabel is None:

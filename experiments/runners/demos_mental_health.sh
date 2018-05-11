@@ -1,7 +1,6 @@
 set -e
 VECTOR_DIM=400
 TWEETS="mental_health_tweets"
-LABELS="mental_health"
 USER_EMBEDDINGS="mental_health_u2v"
 RESULTS="mental_health_"$VECTOR_DIM".tsv"
 WORD_EMBEDDINGS="cohort_word_embeddings.txt"
@@ -12,8 +11,17 @@ WORD_EMBEDDINGS="cohort_word_embeddings.txt"
 #learn user embeddings
 ./experiments/user_models/scripts/learn_user_embeddings.sh $TWEETS $USER_EMBEDDINGS 
 
-#bows > tweets labels results 
-./experiments/user_models/scripts/users_bow.sh $TWEETS $LABELS $RESULTS
+DATA="depression ptsd"
+for ds in $DATA; 
+do
+    #bows > tweets labels results 
+    ./experiments/user_models/scripts/users_bow.sh $TWEETS $ds $RESULTS    
+done
 
-#neurals > tweets labels word_embeddings user_embeddings results 
-./experiments/user_models/scripts/users_neural.sh $TWEETS $LABELS $WORD_EMBEDDINGS  $USER_EMBEDDINGS"_"$VECTOR_DIM".txt" $RESULTS
+for ds in $DATA; 
+do
+    #neurals > tweets labels word_embeddings user_embeddings results 
+    ./experiments/user_models/scripts/users_neural.sh $TWEETS $ds $WORD_EMBEDDINGS  $USER_EMBEDDINGS"_"$VECTOR_DIM".txt" $RESULTS
+done
+
+
