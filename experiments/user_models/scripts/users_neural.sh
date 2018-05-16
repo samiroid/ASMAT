@@ -49,8 +49,8 @@ else
 	RUN_ID=$7
 fi
 #config
-PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
-# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
+# PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
+PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -81,7 +81,7 @@ EXTRACT=1
 GET_WORD_FEATURES=1
 GET_USER_FEATURES=1
 LINEAR_MODELS=1
-NLSE=0
+NLSE=1
 NLSE_INFER=0
 HYPERPARAM=0
 if (($CLEAN > 0)); then
@@ -105,6 +105,7 @@ if (($EXTRACT > 0)); then
 										   -text_path $DATA"/txt/"$TWEETS \
 									-vocab_from $DATA"/txt/"$TRAIN $DATA"/txt/"$DEV \
 												$DATA"/txt/"$TEST \
+									-vocab_size 100000 \
 									-out_folder $NEURAL_FEATURES \
 									-embeddings $WORD_EMBEDDINGS_INPUT 
 	#word embeddings file only with the words on this vocabulary

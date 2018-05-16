@@ -19,7 +19,7 @@ tweets_by_user = {}
 print "[reading user tweets]"
 z=0
 MAX_USERS=100
-# MAX_USERS=float('inf')
+MAX_USERS=float('inf')
 MIN_TWEETS=100
 for fname in os.listdir(path_train):	
 	if os.path.splitext(path_train+fname)[1]!=".gz":
@@ -72,7 +72,6 @@ with open(train_labels_path) as fid:
 			ptsd[user] = cond
 			depression[user] = cond
 		
-
 #stratified split
 ptsd_tuples = [[x[1],x[0]] for x in ptsd.items()]
 tmp_set, ptsd_test = shuffle_split(ptsd_tuples)
