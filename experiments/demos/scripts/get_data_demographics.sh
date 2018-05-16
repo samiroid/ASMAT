@@ -1,0 +1,2 @@
+cp RAW_DATA/raw_datasets/demographics/user_demographics_tweets.txt experiments/demos/DATA/txt/demos_tweets
+python experiments/demos/code/get_demographics_data.py

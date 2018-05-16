@@ -71,10 +71,11 @@ def plot_decay(df, ax, x, ys, cols=None,
     else:
         ax.set_xlabel(xlabel)    
     for l in ax.lines:
-         l.set_linewidth(4)
+        l.set_linewidth(4)
     #hide first and last ytick labels
     new_ticks = [x for x in ax.get_yticks() if x>=min_y and x<=max_y][1:-1]
     ax.set_yticks(new_ticks)
     #setup legend
     ax.legend(loc='upper right', bbox_to_anchor=[1.02, 1.05], fancybox=True, shadow=True)
     return ax
+    

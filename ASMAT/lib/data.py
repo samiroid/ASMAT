@@ -176,11 +176,9 @@ def kfolds(n_folds, n_elements, val_set=False, shuffle=False, random_seed=1234):
             except IndexError:
                 val = train.pop(-1)                
             #flatten the list of lists
-            #train = [item for sublist in train for item in sublist]
             train = flatten_list(train)
             kf.append([train,test,val])
         else:
-            #train = [item for sublist in train for item in sublist]
             train = flatten_list(train)
             kf.append([train,test])
     return kf
@@ -193,7 +191,15 @@ def crossfolds(data, k):
         test_data  = data[test].tolist() 
         folds.append([train_data, test_data])   
     return folds
-    
+
+def read_data(path, sep="\t"):	
+    data = []    
+    with codecs.open(path, "r", "utf-8") as fid:
+        for l in fid:
+            splt = l.rstrip("\n").split(sep)
+            data.append(splt)
+    return data
+
 def read_dataset(path, labels=None):	
     data = []
     ys = []
@@ -207,23 +213,6 @@ def read_dataset(path, labels=None):
     if labels is not None:
         data = filter_labels(data, labels)    
     return data
-
-def read_data(path, sep="\t"):	
-    data = []    
-    with codecs.open(path, "r", "utf-8") as fid:
-        for l in fid:
-            splt = l.rstrip("\n").split(sep)
-            data.append(splt)
-    return data
-
-# def save_dataset(data, out_path, labels=None):
-#     dirname = os.path.dirname(out_path)
-#     if not os.path.exists(dirname):
-#         os.makedirs(dirname)
-#     if labels is not None: data = filter_labels(data, labels)
-#     with open(out_path, "w") as fod:
-#         for ex in data: fod.write('\t'.join(ex) + "\n")
-#     return data
 
 def save_dataset(data, out_path, labels=None):
     dirname = os.path.dirname(out_path)
@@ -241,17 +230,3 @@ def filter_labels(data,labels):
     filtered_data = filter(lambda x:x[0] in labels, data)
     return filtered_data
 
-# def read_lexicon(path, sep='\t', ignore_above=float('inf'), ignore_below=-float('inf')):
-#     with open(path) as fid:
-#         lex = {wrd: float(scr) for wrd, scr in (line.split(sep) for line in fid)
-#                if float(scr) < ignore_above and float(scr) > ignore_below}
-#     return lex
-
-# def filter_lexicon(lexicon, ignore_above=float('inf'), ignore_below=-float('inf')):
-#     lex = { wrd: score for wrd, score in lexicon.items()
-#             if  float(score) < ignore_above 
-#             and float(score) > ignore_below }
-#     return lex
-
-
-    

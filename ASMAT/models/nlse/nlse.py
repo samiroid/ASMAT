@@ -13,6 +13,7 @@ import sys
 
 RAND_SEED=1234
 TMP_MODELS="/tmp/subspace.pkl"
+
 def init_W(size, rng, init=None, shared=True):
     '''
     Random initialization
@@ -67,30 +68,37 @@ def weighted_confusion_matrix(pos_penalty=0, neg_penalty=0, neut_penalty=0):
     
     return weigthed_CM
 
+# def evaluate(model, X, Y):
+#     # Evaluation
+#     cr = 0.
+#     mapp = np.array([1, 2, 0])
+#     ConfMat = np.zeros((3, 3))
+#     Y_hat = np.zeros(len(Y), dtype='int32')
+#     # dev_p_y = np.zeros((3, dev_y.shape[0]))
+#     for j, x, y in zip(np.arange(len(X)), X, Y):
+#         # Prediction
+#         x = np.array(x)
+#         p_y = model.forward(x)
+#         hat_y = np.argmax(p_y)
+#         Y_hat[j]=hat_y
+#         # Confusion matrix
+#         ConfMat[mapp[y], mapp[hat_y]] += 1
+#         # Accuracy
+#         cr = (cr*j + (hat_y == y).astype(float))/(j+1)
+#     avgF1 = f1_score(Y, Y_hat,average="macro")        
+#     acc = accuracy_score(Y, Y_hat)            
+#     # binary_f1 = helpers.FmesSemEval(Y_hat, Y)        
+
+#     return avgF1, acc
+
 def evaluate(model, X, Y):
     # Evaluation
-    cr = 0.
-    mapp = np.array([1, 2, 0])
-    ConfMat = np.zeros((3, 3))
-    Y_hat = np.zeros(len(Y), dtype='int32')
-    # dev_p_y = np.zeros((3, dev_y.shape[0]))
-    for j, x, y in zip(np.arange(len(X)), X, Y):
-        # Prediction
-        x = np.array(x)
-        p_y = model.forward(x)
-        hat_y = np.argmax(p_y)
-        Y_hat[j]=hat_y
-        # Confusion matrix
-        ConfMat[mapp[y], mapp[hat_y]] += 1
-        # Accuracy
-        cr = (cr*j + (hat_y == y).astype(float))/(j+1)
+    Y_hat = model.predict(X)
     avgF1 = f1_score(Y, Y_hat,average="macro")        
     acc = accuracy_score(Y, Y_hat)            
-    # binary_f1 = helpers.FmesSemEval(Y_hat, Y)        
-
     return avgF1, acc
 
-def _fit(nn, train_x, train_y, dev_x, dev_y,silent=False):    
+def train_model(nn, train_x, train_y, dev_x, dev_y,silent=False):    
     train_x, st, ed = build_input(train_x)
     n_sent_train = len(st)    
     train_y = np.array(train_y)    
@@ -105,8 +113,7 @@ def _fit(nn, train_x, train_y, dev_x, dev_y,silent=False):
     train_y = theano.shared(train_y, borrow=True)
     st = theano.shared(st, borrow=True)
     ed = theano.shared(ed, borrow=True)
-    # SGD Update rule
-    # E = nn.params[0]
+    # SGD Update rule    
     # Sub-space: Do not update E
     updates = [(pr, pr - nn.lrate * T.grad(nn.F, pr))
                for pr in nn.params[1:]]
@@ -137,7 +144,6 @@ def _fit(nn, train_x, train_y, dev_x, dev_y,silent=False):
                 sys.stdout.flush()
             n += 1
         Fm, cr = evaluate(nn, dev_x, dev_y)
-
         # INFO
         if last_Fm:
             if best_Fm[0] < Fm:
@@ -170,7 +176,6 @@ def _fit(nn, train_x, train_y, dev_x, dev_y,silent=False):
             delta_str = ""
             best = ""
             nn.save(TMP_MODELS)
-
         if last_Acc:
             if last_Acc > cr:
                 acc_str = "Acc " + colstr("%2.2f%%" % (cr * 100), 'red')
@@ -181,66 +186,63 @@ def _fit(nn, train_x, train_y, dev_x, dev_y,silent=False):
         last_Acc = cr
         last_Fm = Fm
         items = (i + 1, nn.n_epoch, obj_str,
-                 acc_str, Fm * 100, delta_str, best)
-        # logging.info("Epoch %2d/%2d: %s %s Fm %2.2f%% %s%s" % items)
-        # if args.log is not None:
-        #     logging.info("%s,%.3f,%.3f" % (i + 1, cr, Fm))
-        # else:
-        #print "Epoch %2d/%2d: %s %s Fm %2.2f%% %s%s" % items
+                 acc_str, Fm * 100, delta_str, best)        
         if not silent:            
             print "%s Fm %2.2f%% %s%s" % items[3:]
         if drops >= nn.patience:
             print "[ran out of patience]"
             break
-
     #load best model
     nn.load(TMP_MODELS)
     return nn
+
+def load_model(model_path):
+    clf = NLSE(None,None,None,None,None)
+    clf.load(model_path)
+    return clf
 
 class NLSE(object):
     '''
     Embedding subspace
     '''
-    def __init__(self, E, sub_size, lrate, n_epoch=10, randomize_train=True, weight_CM=None, rand_seed=1234, init='glorot-tanh',patience=None):
+    
+    def __init__(self, E, sub_size, label_map, vocab=None, lrate=0.01, n_epoch=10, randomize_train=True, weight_CM=None, rand_seed=1234, init='glorot-tanh', patience=10):
         # Random Seed
-        self.rng = np.random.RandomState(rand_seed)        
-        
-        emb_size = E.shape[0]
-        # Embedding Layer
-        E = E.astype(theano.config.floatX) 
-        E = theano.shared(E, borrow=True)
-        # Embedding subspace projection
-        S = init_W((sub_size, emb_size), self.rng, init=init) # 0.0991
-        # Hidden layer
-        C = init_W((3, sub_size), self.rng, init=init) # 0.679        
-        self.params = [E, S, C]
+        self.rng = np.random.RandomState(rand_seed)    
         self.lrate = lrate
         self.n_epoch = n_epoch
         self.randomize = randomize_train
-        
-        # Compile
-        self.compile(weight_CM)
-        if patience is None:
-            self.patience=float('inf')
-        else:
-            self.patience = patience
+        self.label_map = label_map 
+        self.vocab = vocab                 
+        self.patience = patience
+        self.weight_CM = weight_CM
+        if E is not None and sub_size is not None and label_map is not None:            
+            # Embedding Layer
+            emb_size = E.shape[0]
+            E = E.astype(theano.config.floatX) 
+            E = theano.shared(E, borrow=True)        
+            # Embedding subspace projection        
+            S = init_W((sub_size, emb_size), self.rng, init=init) # 0.0991
+            # Hidden layer
+            C = init_W((len(label_map), sub_size), self.rng, init=init) # 0.679        
+            self.params = [E, S, C]
+            self.compile()        
 
     def forward(self, x):
         return self.fwd(x.astype('int32'))
 
-    def compile(self, weight_CM):
+    def compile(self):
         '''
         Forward pass and Gradients
-        '''
+        '''        
         E, S, C = self.params
         # FORWARD PASS
         # Embedding layer subspace
-        self.z0    = T.ivector()                    # tweet in one hot        
-        z1         = E[:, self.z0]                 # embedding
-        z2         = T.nnet.sigmoid(T.dot(S, z1))  # subspace
-        # Hidden layer
-        z3         = T.dot(C, z2)
-        z4         = T.sum(z3, 1)                   # Bag of words
+        self.z0    = T.ivector()                  # one hot
+        z1         = E[:, self.z0]                # embedding
+        z2         = T.nnet.sigmoid(T.dot(S, z1)) # subspace        
+        z3         = T.dot(C, z2)                 # Hidden layer
+        z4         = T.sum(z3, 1)                 # Bag of words
         self.hat_y = T.nnet.softmax(z4.T).T
         # Compile forward pass
         self.fwd = theano.function([self.z0], self.hat_y)        
@@ -248,8 +250,9 @@ class NLSE(object):
         # Train cost minus log probability
         self.z1 = z1
         self.y  = T.ivector()                             
-        if weight_CM:
-            WCM    = (weight_CM[self.y, :].T)*T.log(self.hat_y)
+        #weighted confusion matrix (penalize errors differently)
+        if self.weight_CM:
+            WCM    = (self.weight_CM[self.y, :].T)*T.log(self.hat_y)
             self.F = -T.mean(WCM.sum(0))        
         else:
             self.F = -T.mean(T.log(self.hat_y)[self.y])        
@@ -273,7 +276,7 @@ class NLSE(object):
         return Y_hat
     
     def fit(self, train_x, train_y, dev_x, dev_y,silent=False):
-        nn = _fit(self,train_x, train_y, dev_x, dev_y,silent)
+        nn = train_model(self,train_x, train_y, dev_x, dev_y,silent)
         self.params = nn.params
 
     def save(self, model_file):
@@ -282,16 +285,21 @@ class NLSE(object):
             os.makedirs(os.path.dirname(model_file))
         with open(model_file, 'wb') as fid: 
             param_list = [W.get_value() for W in self.params] #+ [self.emb_path]
+            param_list += [self.vocab, self.label_map, self.weight_CM]
             cPickle.dump(param_list, fid, cPickle.HIGHEST_PROTOCOL)
 
     def load(self, path):
         # Load pre existing model  
         with open(path, 'rb') as fid: 
-            E, S, C = cPickle.load(fid)
+            E, S, C, vocab, label_map, weight_CM = cPickle.load(fid)
             E = theano.shared(E, borrow=True)
             S = theano.shared(S, borrow=True)
             C = theano.shared(C, borrow=True)
         self.params = [E, S, C]
+        self.vocab = vocab
+        self.label_map = label_map
+        self.weight_CM = weight_CM
+        self.compile()
 
 
 

@@ -65,36 +65,33 @@ def print_results(results, columns=None):
 	s = ["{}: {}| ".format(c, r) for c, r in zip(columns, row)]
 	print "** " + "".join(s)
 
-def read_results(path, metric="avgF1", sep=",", run_ids=None, models=None, datasets=None):
+def read_results(df, metric="avgF1", run_ids=None, models=None, datasets=None):
 	"""
 		read results:
 		assumes the following columns: dataset, model, [metric]
 	"""
-	c = pd.read_csv(path,sep=sep)		
-	#c = c[["dataset","model","run_id",metric]]
-	c.drop_duplicates(inplace=True)
+	
+	df.drop_duplicates(subset=["model","dataset"],inplace=True)
 	
 	if run_ids is not None:
 		#filter by run_ids 
-		c = c[c["run_id"].isin(run_ids)]
+		df = df[df["run_id"].isin(run_ids)]
 	#get datasets 
 	if datasets is not None:
-		c = c[c["dataset"].isin(datasets)]		
+		df = df[df["dataset"].isin(datasets)]		
 	if models is not None:
-		c = c[c["model"].isin(models)]		
+		df = df[df["model"].isin(models)]		
 	
-	uniq_models = c["model"].unique().tolist()
-	uniq_datasets = c["dataset"].unique().tolist()	
-	dt = [[d] + c[c["dataset"]==d][metric].values.tolist() for d in uniq_datasets]
-	dt = dt
+	uniq_models = df["model"].unique().tolist()
+	uniq_datasets = df["dataset"].unique().tolist()	
+	dt = [[d] + df[df["dataset"]==d][metric].values.tolist() for d in uniq_datasets]	
 	columns = ["dataset"] + uniq_models	
-
-	# set_trace()	
-	df = pd.DataFrame(dt,columns=columns)	
+	# set_trace()
+	df = pd.DataFrame(dt,columns=columns)
 	
 	if models is not None:
 		#re-order model columns
-		df = df[["dataset"]+models]
+		return df[["dataset"]+models]
 	return df
 
 def get_hyperparams(path, default_conf):

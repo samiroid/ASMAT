@@ -104,7 +104,7 @@ def project_vectors(X_in, model='tsne', perp=10, n_components=2):
     
     return X_out
 
-def similarity_rank(X, wrd2idx,top_k=None,max_users=None):        
+def similarity_rank(X, wrd2idx,top_k=None):        
 
     items = wrd2idx.keys()#[:max_users]
     idxs  = wrd2idx.values()#[:max_users]

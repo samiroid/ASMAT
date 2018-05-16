@@ -8,7 +8,7 @@ sys.path.append("..")
 
 from ASMAT.lib.vectorizer import docs2idx, build_vocabulary
 from ASMAT.lib import embeddings
-from ASMAT.lib.data import read_dataset, flatten_list, filter_labels
+from ASMAT.lib.data import read_dataset, flatten_list
 
 def get_vocabulary(fnames, max_words=None):	
 	datasets = []	
@@ -19,34 +19,28 @@ def get_vocabulary(fnames, max_words=None):
 	vocab = build_vocabulary(vocab_docs, max_words=max_words)
 	return vocab
 
-def vectorize(dataset, vocabulary, idx_labels=True):
+def vectorize(dataset, vocab):
 	docs = [x[1] for x in dataset]
-	labels = [x[0] for x in dataset]
-	X, _ = docs2idx(docs, vocabulary)
-	label2idx = None
-	if idx_labels:
-		label2idx = build_vocabulary(labels)
-		Y = [label2idx[l] for l in labels]
-	else:
-		Y = [float(l) for l in labels]
-	return X, Y, label2idx
+	Y = [x[0] for x in dataset]
+	X, _ = docs2idx(docs, vocab)	
+	return X, Y
 
 def main(fnames, vocab, opts):
 	#read data
 	datasets = []
 	for fname in fnames:
 		print "[reading data @ {}]".format(repr(fname))
-		ds = read_dataset(fname, labels=opts.labels)
+		ds = read_dataset(fname)
 		datasets.append(ds)	
 	#vectorize
 	print "[vectorizing documents]"
 	for name, ds in zip(fnames, datasets):
-		X, Y, label_map = vectorize(ds, vocab, opts.idx_labels)
+		X, Y = vectorize(ds, vocab)
 		basename = os.path.splitext(os.path.basename(name))[0]
 		path = opts.out_folder + basename
 		print "[saving data @ {}]".format(path)
 		with open(path, "wb") as fid:
-			cPickle.dump([X, Y, vocab, label_map], fid, -1)
+			cPickle.dump([X, Y, vocab], fid, -1)
 	return vocab
 
 def get_parser():
@@ -55,22 +49,17 @@ def get_parser():
 	par.add_argument('-out_folder', type=str, required=True, help='output folder')	
 	par.add_argument('-cv', type=int, help='crossfold')
 	par.add_argument('-cv_from', type=str, nargs='*', help="files for crossvalidation")
-	par.add_argument('-embeddings', type=str, nargs='+', help='path to embeddings')
-	par.add_argument('-idx_labels', action="store_true", \
-						help="convert labels to numeric indices. Useful for classification")
-	par.add_argument('-labels', type=str, nargs='+', help='label set')
+	par.add_argument('-embeddings', type=str, nargs='+', help='path to embeddings')	
 	par.add_argument('-vocab_size', type=int, \
-						help='max number of types to keep in the vocabulary')    		
+						help='max number of types to keep in the vocabulary')
 	par.add_argument('-vocab_from', type=str, nargs='*', \
 						help="compute vocabulary from these files")
-	
 	return par
 
 if __name__ == "__main__":
 	parser = get_parser()
 	args = parser.parse_args()
-	if args.labels is not None:
-		print "[labels: {}]".format(repr(args.labels))
+	
 	#create output folder if needed
 	args.out_folder = args.out_folder.rstrip("/") + "/"
 	if not os.path.exists(os.path.dirname(args.out_folder)):

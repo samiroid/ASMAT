@@ -18,7 +18,7 @@ def run(inputs, opts):
 		print "[extracting features @ {}]".format(repr(dataset))
 		E = None
 		with open(dataset, "rb") as fid:
-			X, Y, vocabulary, label_map = cPickle.load(fid)
+			X, Y, vocabulary = cPickle.load(fid)
 			basename = os.path.splitext(os.path.basename(dataset))[0]			
 			if opts.bow is not None:
 				for agg in opts.bow:

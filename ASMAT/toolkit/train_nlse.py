@@ -14,7 +14,7 @@ import sys
 
 #local 
 sys.path.append("..")
-from ASMAT.lib import helpers, embeddings
+from ASMAT.lib import helpers, embeddings, vectorizer
 from ASMAT.models.nlse import nlse
 
 def hypertune(train, dev, emb_path, obj, hyperparams, res_path=None):    		
@@ -45,19 +45,25 @@ def hypertune(train, dev, emb_path, obj, hyperparams, res_path=None):
     print "[best conf: {} | score: {}]".format(repr(best_hp),best_score)
     return best_hp, best_score
 
-def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None):
+def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None, model_path=None):
     with open(train, 'rb') as fid:     
-        X_train, Y_train, vocabulary, _ = cPickle.load(fid)         
+        X_train, Y_train, vocabulary = cPickle.load(fid)         
     with open(dev, 'rb') as fid:
-        X_dev, Y_dev,_,_ = cPickle.load(fid) 
+        X_dev, Y_dev, _ = cPickle.load(fid) 
     with open(test, 'rb') as fid:
-        test_x, test_y,_,_ = cPickle.load(fid) 
+        X_test, Y_test, _ = cPickle.load(fid) 
     E, _ = embeddings.read_embeddings(emb_path, wrd2idx=vocabulary)
-    nn = nlse.NLSE(E, **hyperparams)
+    Ys = Y_train + Y_dev + Y_test
+    label_map = vectorizer.build_vocabulary(Ys)
+    Y_train = [label_map[y] for y in Y_train]
+    Y_test = [label_map[y] for y in Y_test]
+    Y_dev = [label_map[y] for y in Y_dev]
+    # set_trace()
+    nn = nlse.NLSE(E, label_map=label_map, vocab=vocabulary, **hyperparams)
     nn.fit(X_train, Y_train, X_dev, Y_dev)
-    y_hat = nn.predict(test_x)
-    avgF1 = f1_score(test_y, y_hat,average="macro") 		
-    acc = accuracy_score(test_y, y_hat)					        
+    y_hat = nn.predict(X_test)
+    avgF1 = f1_score(Y_test, y_hat,average="macro") 		
+    acc = accuracy_score(Y_test, y_hat)					        
     run_id = run_id
     dataset = os.path.basename(test)     
     hp = {p:hyperparams[p] for p in ["sub_size","lrate"]}    
@@ -69,11 +75,12 @@ def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None):
                 "run_id":run_id,
                 "sub_size":hyperparams["sub_size"],
                 "lrate":hyperparams["lrate"]}
-    cols = ["dataset", "model", "run_id", "acc", "avgF1","sub_size"]
+    
     helpers.print_results(results,columns=["dataset","run_id","lrate","sub_size","acc","avgF1"])
     if res_path is not None:
+        cols = ["dataset", "model", "run_id", "acc", "avgF1"]
         helpers.save_results(results, res_path, sep="\t", columns=cols)
-    return results
+    return results, nn
 
 def get_argparser():
     parser = argparse.ArgumentParser(prog='NLSE model trainer')
@@ -124,7 +131,8 @@ if __name__ == '__main__':
         if len(hyperparams_grid) > 0:				            
             conf, _ = hypertune(args.train, args.dev, args.emb_path,\
                                     scorer, hyperparams_grid, res_path=hyper_results_path)
-        main(args.train, args.dev, args.test, args.emb_path, conf, run_id=args.run_id, res_path=args.res_path)
+        results, model = main(args.train, args.dev, args.test, args.emb_path, conf, run_id=args.run_id, res_path=args.res_path)
+        model.save(args.m)
     else:
         assert args.cv > 2, "need at leat 2 folds for cross-validation"
         results = []

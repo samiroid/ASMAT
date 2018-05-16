@@ -3,6 +3,7 @@ set -e
 COLOR_OFF='\033[0m'       # Text Reset
 # Regular Colors
 RED='\033[0;31m'          # RED
+MAGENTA='\033[0;95m'          # MAGENTA
 
 if [ -z "$1" ]
   then
@@ -81,6 +82,7 @@ GET_WORD_FEATURES=1
 GET_USER_FEATURES=1
 LINEAR_MODELS=1
 NLSE=0
+NLSE_INFER=0
 HYPERPARAM=0
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
@@ -98,12 +100,11 @@ if (($EXTRACT > 0)); then
 	#extract vocabulary and indices	
 	#NOTE embedding based models can represent all words in the embedding matrix so it is 
 	# ok to include the test set in the vocabulary
-	python $PROJECT_PATH/code/users_extract.py -labels_path $DATA"/txt/"$TRAIN $DATA"/txt/"$DEV \
+	python ASMAT/toolkit/users_extract.py -labels_path $DATA"/txt/"$TRAIN $DATA"/txt/"$DEV \
 										   $DATA"/txt/"$TEST \
 										   -text_path $DATA"/txt/"$TWEETS \
 									-vocab_from $DATA"/txt/"$TRAIN $DATA"/txt/"$DEV \
 												$DATA"/txt/"$TEST \
-									-idx_labels \
 									-out_folder $NEURAL_FEATURES \
 									-embeddings $WORD_EMBEDDINGS_INPUT 
 	#word embeddings file only with the words on this vocabulary
@@ -162,15 +163,15 @@ fi
 
 if (($NLSE > 0)); then
 	echo $RED"##### NLSE ##### "$COLOR_OFF
-	python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/"$TRAIN"users_" \
-							   		   -dev $NEURAL_FEATURES"/"$DEV"users_" \
-                           	   		   -test $NEURAL_FEATURES"/"$TEST"users_" \
+	python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/"$TRAIN"_users" \
+							   		   -dev $NEURAL_FEATURES"/"$DEV"_users" \
+                           	   		   -test $NEURAL_FEATURES"/"$TEST"_users" \
                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
                            	   		   -emb $USER_EMBEDDINGS \
                                		   -run_id $RUN_ID\
                            	   		   -res_path $RESULTS \
-									   -sub_size 10 \
-									   -lrate 0.01 \
+									   -sub_size 5 \
+									   -lrate 0.005 \
 									   -n_epoch 10 \
 									   -patience 10 
 									#    \
@@ -189,3 +190,11 @@ if (($NLSE > 0)); then
 	# 								   -patience 8 \
 	# 								   -hyperparams_path $NLSE_HYPERPARAMS
 fi
+
+if (($NLSE_INFER > 0)); then
+	echo $MAGENTA"##### NLSE INFERENCE ##### "$COLOR_OFF
+	python ASMAT/toolkit/run_nlse.py -data_path $DATA"/txt/"$TRAIN \
+								 	-model_path $MODELS"/"$DATASET"_NLSE.pkl" \
+									-res_path $DATA"/txt/predictions_"$DATASET".txt"									   
+fi
+
