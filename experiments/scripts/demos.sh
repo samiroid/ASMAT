@@ -1,5 +1,5 @@
 set -e
-VECTOR_DIM=40
+VECTOR_DIM=200
 #RESULTS="demographics_"$VECTOR_DIM".tsv"
 USER_EMBEDDINGS="cohort_u2v_"$VECTOR_DIM 
 WORD_EMBEDDINGS="cohort_word_embeddings.txt"
@@ -8,17 +8,16 @@ DATA_PATH="/Users/samir/Dev/projects/ASMAT/experiments/demos/DATA"
 NEURAL_FEATURES=$DATA_PATH"/pkl/features"
 
 #RUN CONFIGS
-GET_DATA=0
-EXTRACT=0
-TRAIN_U2V=0
+GET_DATA=1
+EXTRACT=1
+TRAIN_U2V=1
 TRAIN_MH=1
 TRAIN_DEMO=1
-FEATURES=0
-LINEAR=0
-NLSE=0
+FEATURES=1
+LINEAR=1
+NLSE=1
 NLSE_INFER=1
-INFER_MH=0
-INFER_DEMO=0
+
 
 #get datasets
 if (($GET_DATA > 0)); then
@@ -31,9 +30,9 @@ if (($TRAIN_U2V > 0)); then
     #learn user embeddings > dataset embedding_filename
     echo $RED"##### TRAIN USER EMBEDDINGS #####"$COLOR_OFF
     WORKERS=4
-    NEGATIVE_SAMPLES=5
-    MIN_COUNT=100    
-    PV_EPOCHS=1
+    NEGATIVE_SAMPLES=10
+    MIN_COUNT=5    
+    PV_EPOCHS=5
     python ASMAT/toolkit/gensimer.py -input $DATA_PATH"/txt/demos_tweets" \
                                             $DATA_PATH"/txt/mental_health_tweets" \
                                     -output $DATA_PATH"/embeddings/"$USER_EMBEDDINGS \
