@@ -70,12 +70,13 @@ def read_results(df, metric="avgF1", run_ids=None, models=None, datasets=None):
 		read results:
 		assumes the following columns: dataset, model, [metric]
 	"""
-	
-	df.drop_duplicates(subset=["model","dataset"],inplace=True)
+	# set_trace()
+	df.drop_duplicates(subset=["model","dataset","run_id"],inplace=True)
 	
 	if run_ids is not None:
 		#filter by run_ids 
 		df = df[df["run_id"].isin(run_ids)]
+	
 	#get datasets 
 	if datasets is not None:
 		df = df[df["dataset"].isin(datasets)]		
@@ -88,7 +89,7 @@ def read_results(df, metric="avgF1", run_ids=None, models=None, datasets=None):
 	columns = ["dataset"] + uniq_models	
 	# set_trace()
 	df = pd.DataFrame(dt,columns=columns)
-	
+	# set_trace()
 	if models is not None:
 		#re-order model columns
 		return df[["dataset"]+models]
