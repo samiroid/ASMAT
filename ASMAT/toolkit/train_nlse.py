@@ -45,7 +45,7 @@ def hypertune(train, dev, emb_path, obj, hyperparams, res_path=None):
     print "[best conf: {} | score: {}]".format(repr(best_hp),best_score)
     return best_hp, best_score
 
-def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None, model_path=None):
+def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None, no_hidden=False):
     with open(train, 'rb') as fid:     
         X_train, Y_train, vocabulary = cPickle.load(fid)         
     with open(dev, 'rb') as fid:
@@ -58,25 +58,28 @@ def main(train, dev, test, emb_path, hyperparams, run_id=None, res_path=None, mo
     Y_train = [label_map[y] for y in Y_train]
     Y_test = [label_map[y] for y in Y_test]
     Y_dev = [label_map[y] for y in Y_dev]
+    print "[no hidden: {}]".format(no_hidden)
     # set_trace()
-    nn = nlse.NLSE(E, label_map=label_map, vocab=vocabulary, **hyperparams)
+    if no_hidden:
+        del hyperparams["sub_size"]
+        nn = nlse.BOE_plus(E, label_map=label_map, vocab=vocabulary, **hyperparams)
+    else:
+        nn = nlse.NLSE(E, label_map=label_map, vocab=vocabulary, **hyperparams)
     nn.fit(X_train, Y_train, X_dev, Y_dev)
     y_hat = nn.predict(X_test)
     avgF1 = f1_score(Y_test, y_hat,average="macro") 		
     acc = accuracy_score(Y_test, y_hat)					        
     run_id = run_id
     dataset = os.path.basename(test)     
-    hp = {p:hyperparams[p] for p in ["sub_size","lrate"]}    
+#    hp = {p:hyperparams[p] for p in ["sub_size","lrate"]}    
     if run_id is None: run_id = "NLSE"
     results = {"acc":round(acc,3), \
                 "avgF1":round(avgF1,3), \
                 "model":"NLSE", \
                 "dataset":dataset, \
-                "run_id":run_id,
-                "sub_size":hyperparams["sub_size"],
-                "lrate":hyperparams["lrate"]}
+                "run_id":run_id}
     
-    helpers.print_results(results,columns=["dataset","run_id","lrate","sub_size","acc","avgF1"])
+    helpers.print_results(results,columns=["dataset","run_id","acc","avgF1"])
     if res_path is not None:
         cols = ["dataset", "model", "run_id", "acc", "avgF1"]
         helpers.save_results(results, res_path, sep="\t", columns=cols)
@@ -93,6 +96,8 @@ def get_argparser():
     parser.add_argument('-run_id', type=str, help='run id')
     parser.add_argument('-res_path', type=str, help='results file')
     # CONFIG    
+    parser.add_argument('-tune_embeddings', action="store_true", help='fine tune embeddings')
+    parser.add_argument('-no_hidden', action="store_true", help='fine tune embeddings')
     parser.add_argument('-rand_seed', default=1234, type=int, help='random seed for data shuffling, default is 1234')
     parser.add_argument('-n_epoch', help='number of training epochs', default=12, type=int)
     parser.add_argument('-lrate', help='learning rate', default=0.01, type=float)
@@ -113,7 +118,8 @@ if __name__ == '__main__':
             "lrate": args.lrate, \
             "rand_seed": args.rand_seed, 
             "n_epoch": args.n_epoch,
-            "patience": args.patience}
+            "patience": args.patience,
+            "tune_embeddings":args.tune_embeddings}
 
     hyperparams_grid = []
     if os.path.isfile(args.hyperparams_path):
@@ -131,7 +137,7 @@ if __name__ == '__main__':
         if len(hyperparams_grid) > 0:				            
             conf, _ = hypertune(args.train, args.dev, args.emb_path,\
                                     scorer, hyperparams_grid, res_path=hyper_results_path)
-        results, model = main(args.train, args.dev, args.test, args.emb_path, conf, run_id=args.run_id, res_path=args.res_path)
+        results, model = main(args.train, args.dev, args.test, args.emb_path, conf, run_id=args.run_id, res_path=args.res_path, no_hidden=args.no_hidden)
         model.save(args.m)
     else:
         assert args.cv > 2, "need at leat 2 folds for cross-validation"

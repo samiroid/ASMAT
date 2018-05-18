@@ -33,8 +33,8 @@ else
 	RUN_ID=$4
 fi
 #config
-# PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
-PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
+PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models/"
+# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models/"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 FEATURES=$DATA"/pkl/features"
@@ -69,11 +69,10 @@ if (($EXTRACT > 0)); then
 	#extract vocabulary and indices	
 	#NOTE embedding based models can represent all words in the embedding matrix so it is 
 	# ok to include the test set in the vocabulary
-	python $PROJECT_PATH/code/users_extract.py -labels_path $DATA"/txt/"$TRAIN \
+	python ASMAT/toolkit/users_extract.py -labels_path $DATA"/txt/"$TRAIN \
 												$DATA"/txt/"$DEV $DATA"/txt/"$TEST \
 										   		-text_path $DATA"/txt/"$TWEETS \
 									-vocab_from $DATA"/txt/"$TRAIN $DATA"/txt/"$DEV \
-									-idx_labels \
 									-vocab_size 100000 \
 									-out_folder $FEATURES 
 

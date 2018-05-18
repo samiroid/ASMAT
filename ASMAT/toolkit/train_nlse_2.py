@@ -14,8 +14,8 @@ import sys
 
 #local 
 sys.path.append("..")
-from ASMAT.lib import helpers, embeddings
-from ASMAT.models import nlse
+from ASMAT.lib import helpers, embeddings, vectorizer
+from ASMAT.models.nlse import nlse
 
 def hypertune(train, dev, emb_path, obj, hyperparams, res_path=None):    		
 
@@ -45,26 +45,37 @@ def hypertune(train, dev, emb_path, obj, hyperparams, res_path=None):
     print "[best conf: {} | score: {}]".format(repr(best_hp),best_score)
     return best_hp, best_score
 
-def hypertuner(train, dev, test, emb_path, obj, hyperparams, run_id, res_path=None):  
+def hypertuner(train, dev, test, emb_path, obj, hyperparams, run_id, 
+             res_path=None, model_path=None):      
     with open(train, 'rb') as fid:     
-        X_train, Y_train, vocabulary, _ = cPickle.load(fid)         
+        X_train, Y_train, vocabulary = cPickle.load(fid)         
     with open(dev, 'rb') as fid:
-        X_dev, Y_dev,_,_ = cPickle.load(fid)     
+        X_dev, Y_dev, _ = cPickle.load(fid) 
     with open(test, 'rb') as fid:
-        X_test, Y_test,_,_ = cPickle.load(fid) 
+        X_test, Y_test, _ = cPickle.load(fid) 
     E, _ = embeddings.read_embeddings(emb_path, wrd2idx=vocabulary)
+    Ys = Y_train + Y_dev + Y_test
+    label_map = vectorizer.build_vocabulary(Ys)
+    Y_train = [label_map[y] for y in Y_train]
+    Y_test = [label_map[y] for y in Y_test]
+    Y_dev = [label_map[y] for y in Y_dev]
+    
     dataset = os.path.basename(test)     
     best_hp = None
     best_score = 0
     best_results = None
+
     for hp in hyperparams:
         #initialize model with the hyperparameters	
-        nn = nlse.NLSE(E, **hp)
+        nn = nlse.NLSE(E, label_map=label_map, vocab=vocabulary, **hp)
+        # nn = nlse.NLSE(E, **hp)
         nn.fit(X_train, Y_train, X_dev, Y_dev, silent=False)
         Y_hat = nn.predict(X_test)        
         score = obj(Y_test, Y_hat)
         print "[score: {} | hyperparameters: {}]".format(score, repr(hp))
         if score > best_score:
+            if model_path is not None:
+                nn.save(model_path)
             best_score = score
             best_hp = hp
             acc = accuracy_score(Y_test, Y_hat)
@@ -78,8 +89,9 @@ def hypertuner(train, dev, test, emb_path, obj, hyperparams, run_id, res_path=No
                     "hyper":repr(rep_hp)}
         res = {"score":round(score,3), "hyper":repr(hp)}        
         helpers.print_results(res)
+        
     if res_path is not None:
-        cols = ["dataset", "run_id", "model", "acc", "avgF1","hyper"]
+        cols = ["dataset", "model", "run_id", "acc", "avgF1"]
         helpers.save_results(best_results,res_path, cols, sep="\t")
     print ""
     print "[best conf: {} | score: {}]".format(repr(best_hp),best_score)
@@ -147,7 +159,7 @@ if __name__ == '__main__':
             "rand_seed": args.rand_seed, 
             "n_epoch": args.n_epoch,
             "patience": args.patience}
-
+    
     hyperparams_grid = []
     if os.path.isfile(args.hyperparams_path):
         assert args.dev is not None, "Need a dev set for hyperparameter search"		

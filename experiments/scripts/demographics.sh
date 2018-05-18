@@ -1,8 +1,11 @@
 set -e
-VECTOR_DIM=400
+VECTOR_DIM=200
 RESULTS="demographics_"$VECTOR_DIM".tsv"
 USER_EMBEDDINGS="demographics_u2v"
-WORD_EMBEDDINGS="cohort_word_embeddings.txt"
+#WORD_EMBEDDINGS="cohort_word_embeddings.txt"
+WORD_EMBEDDINGS="cohort_w2v_"$VECTOR_DIM".txt"
+TWEETS="demos_tweets"
+
 #get datasets
 ./experiments/user_models/scripts/get_data_demographics.sh
 

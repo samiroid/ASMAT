@@ -49,8 +49,8 @@ else
 	RUN_ID=$7
 fi
 #config
-# PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
-PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
+PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/user_models"
+# PROJECT_PATH="/data/ASMAT/ASMAT/experiments/user_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -59,10 +59,6 @@ MODELS=$DATA"/models"
 TRAIN=$DATASET"_train"
 DEV=$DATASET"_dev"
 TEST=$DATASET"_test"
-#TWEETS=$DATASET"_users_tweets"
-#USER_EMBEDDINGS=$DATA/"embeddings/U2V"
-#USER_EMBEDDINGS=$NEURAL_FEATURES"/embeddings/U2V_"$DATASET
-#WORD_EMBEDDINGS_INPUT="RAW_DATA/embeddings/"$EMB_FILE
 
 USER_EMBEDDINGS=$PROJECT_PATH"/DATA/embeddings/"$USER_EMBS
 WORD_EMBEDDINGS_INPUT="RAW_DATA/embeddings/"$WORD_EMBS
@@ -83,7 +79,7 @@ GET_USER_FEATURES=1
 LINEAR_MODELS=1
 NLSE=1
 NLSE_INFER=0
-HYPERPARAM=0
+HYPERPARAM=1
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
 	rm -rf $DATA"/pkl" || True
@@ -164,38 +160,36 @@ fi
 
 if (($NLSE > 0)); then
 	echo $RED"##### NLSE ##### "$COLOR_OFF
-	python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/"$TRAIN"_users" \
+	# python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/"$TRAIN"_users" \
+	# 						   		   -dev $NEURAL_FEATURES"/"$DEV"_users" \
+    #                        	   		   -test $NEURAL_FEATURES"/"$TEST"_users" \
+    #                        	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
+    #                        	   		   -emb $USER_EMBEDDINGS \
+    #                            		   -run_id $RUN_ID\
+    #                        	   		   -res_path $RESULTS \
+	# 								   -sub_size 5 \
+	# 								   -lrate 0.005 \
+	# 								   -n_epoch 10 \
+	# 								   -patience 10 \
+	#    								-hyperparams_path $NLSE_HYPERPARAMS	
+	python ASMAT/toolkit/train_nlse_2.py -train $NEURAL_FEATURES"/"$TRAIN"_users" \
 							   		   -dev $NEURAL_FEATURES"/"$DEV"_users" \
                            	   		   -test $NEURAL_FEATURES"/"$TEST"_users" \
                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
                            	   		   -emb $USER_EMBEDDINGS \
-                               		   -run_id $RUN_ID\
+                               		   -run_id $RUN_ID"_2"\
                            	   		   -res_path $RESULTS \
 									   -sub_size 5 \
 									   -lrate 0.005 \
-									   -n_epoch 10 \
-									   -patience 10 
-									#    \
-									#    -hyperparams_path $NLSE_HYPERPARAMS
-
-	# python ASMAT/toolkit/train_nlse_2.py -train $NEURAL_FEATURES"/"$TRAIN \
-	# 						   		   -dev $NEURAL_FEATURES"/"$DEV \
-    #                        	   		   -test $NEURAL_FEATURES"/"$TEST \
-    #                        	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
-    #                        	   		   -emb $FILTERED_EMBEDDINGS \
-    #                            		   -run_id $RUN_ID"_2" \
-    #                        	   		   -res_path $RESULTS \
-	# 								   -sub_size 5 \
-	# 								   -lrate 0.05 \
-	# 								   -n_epoch 20 \
-	# 								   -patience 8 \
-	# 								   -hyperparams_path $NLSE_HYPERPARAMS
+									   -n_epoch 20 \
+									   -patience 10 \
+									   -hyperparams_path $NLSE_HYPERPARAMS
 fi
 
 if (($NLSE_INFER > 0)); then
 	echo $MAGENTA"##### NLSE INFERENCE ##### "$COLOR_OFF
 	python ASMAT/toolkit/run_nlse.py -data_path $DATA"/txt/"$TRAIN \
 								 	-model_path $MODELS"/"$DATASET"_NLSE.pkl" \
-									-res_path $DATA"/txt/predictions_"$DATASET".txt"									   
+									-res_path $DATA"/results/predictions_"$DATASET".txt"									   
 fi
 

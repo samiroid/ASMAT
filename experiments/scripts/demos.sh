@@ -2,7 +2,8 @@ set -e
 VECTOR_DIM=200
 #RESULTS="demographics_"$VECTOR_DIM".tsv"
 USER_EMBEDDINGS="cohort_u2v_"$VECTOR_DIM 
-WORD_EMBEDDINGS="cohort_word_embeddings.txt"
+USER_EMBEDDINGS="cohort_w2v_"$VECTOR_DIM".txt"
+#WORD_EMBEDDINGS="cohort_word_embeddings.txt"
 DATA_PATH="/data/ASMAT/ASMAT/experiments/demos/DATA"
 DATA_PATH="/Users/samir/Dev/projects/ASMAT/experiments/demos/DATA"
 NEURAL_FEATURES=$DATA_PATH"/pkl/features"
@@ -10,14 +11,14 @@ NEURAL_FEATURES=$DATA_PATH"/pkl/features"
 #RUN CONFIGS
 GET_DATA=1
 EXTRACT=1
-TRAIN_U2V=1
-TRAIN_MH=1
-TRAIN_DEMO=1
+TRAIN_U2V=0
+RUN_MH=1
+RUN_DEMO=1
 FEATURES=1
 LINEAR=1
 NLSE=1
 NLSE_INFER=1
-
+NLSE_HYPERPARAMS=$DATA_PATH"/confs/nlse.cfg"
 
 #get datasets
 if (($GET_DATA > 0)); then
@@ -58,13 +59,13 @@ fi
 MH_DATASETS="depression ptsd"
 DEMO_DATASETS="age race gender"
 DATASETS=""
-if (($TRAIN_MH > 0)); then
+if (($RUN_MH > 0)); then
     for ds in $MH_DATASETS; do
         DATASETS=$DATASETS" "$ds        
     done
 fi
 
-if (($TRAIN_DEMO > 0)); then
+if (($RUN_DEMO > 0)); then
     for ds in $DEMO_DATASETS; do
         DATASETS=$DATASETS" "$ds       
     done
@@ -97,16 +98,17 @@ if (($LINEAR > 0)); then
 if (($NLSE > 0)); then    
     for ds in $DATASETS; do        
         echo $RED"##### NLSE MODEL $ds ##### "$COLOR_OFF	
-        python ASMAT/toolkit/train_nlse.py -run_id "DEMOS" \
+        python ASMAT/toolkit/train_nlse_2.py -run_id "DEMOS" \
                                             -train $NEURAL_FEATURES"/"$ds"_train_users" \
                                             -test $NEURAL_FEATURES"/"$ds"_test_users" \
                                             -dev $NEURAL_FEATURES"/"$ds"_dev_users" \
                            	   		   -m $DATA_PATH"/models/"$ds"_NLSE.pkl" \
                            	   		   -emb $DATA_PATH"/embeddings/"$USER_EMBEDDINGS".txt" \
 									   -sub_size 5 \
-									   -lrate 0.1 \
-									   -n_epoch 10 \
-									   -patience 10 
+									   -lrate 0.01 \
+									   -n_epoch 20 \
+									   -patience 10 \
+                                       -hyperparams_path $NLSE_HYPERPARAMS
  done
  fi
 
@@ -115,6 +117,6 @@ if (($NLSE_INFER > 0)); then
 	    echo $MAGENTA"##### NLSE INFERENCE $ds ##### "$COLOR_OFF
 	    python ASMAT/toolkit/run_nlse.py -data_path $DATA_PATH"/txt/cohort.txt" \
 								 	-model_path $DATA_PATH"/models/"$ds"_NLSE.pkl" \
-									-res_path $DATA_PATH"/txt/predictions_"$ds".txt"			
+									-res_path $DATA_PATH"/results/predictions_"$ds".txt"			
     done
 fi
