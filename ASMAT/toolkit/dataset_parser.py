@@ -4,8 +4,8 @@ from ipdb import set_trace
 import os
 import sys
 sys.path.append("..")
-from ASMAT.lib.preprocess import preprocess
-from ASMAT.lib.data import save_dataset, flatten_list
+#from ASMAT.lib.preprocess import preprocess
+from ASMAT.lib.data import save_dataset, flatten_list, preprocess
 import codecs 
 
 SEP_EMOJI=False
@@ -17,7 +17,7 @@ def omd_hcr(in_path):
 		for item in soup.findAll('item'):
 			if item.attrs['label'] in ['positive', 'negative', 'neutral']:
 				msg = item.find("content").text
-				msg = preprocess(msg.decode("utf-8"),sep_emoji=SEP_EMOJI)
+				msg = preprocess(msg.decode("utf-8"))
 				data.append([item.attrs['label'], msg])	
 	return data
 
@@ -42,7 +42,7 @@ def semeval(in_path):
 			label = spt[0].replace("\"", "")
 			tweet = spt[1] #.decode("utf-8")
 			if label in ['positive', 'negative', 'neutral']:
-				tweet = preprocess(tweet,sep_emoji=SEP_EMOJI) #.encode("utf-8")
+				tweet = preprocess(tweet) #.encode("utf-8")
 				ex = (label, tweet)
 				data.append(ex)
 	return data
@@ -55,7 +55,7 @@ def casm(in_path):
 		for l in fid:
 			spt = l.split("\t")
 			label = spt[0].split(",")[1]
-			tweet = preprocess(spt[1],sep_emoji=SEP_EMOJI)
+			tweet = preprocess(spt[1])
 			if tweet in cache:
 				continue
 			cache[tweet] = True
