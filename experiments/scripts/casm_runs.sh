@@ -1,6 +1,6 @@
 set -e
-sentiment_datasets="HCR OMD TW13 TW14 TW15"
-# sentiment_datasets="boo-cheer cameron-3"
+#sentiment_datasets="HCR OMD TW13 TW14 TW15"
+sentiment_datasets="boo-cheer cameron-3"
 
 
 echo "" > "done_dm.txt"
@@ -17,7 +17,7 @@ echo "" > "done_dm.txt"
 # 50-D vectors
 for ds in $sentiment_datasets; 
 do
-    ./experiments/document_models/scripts/dm_neural.sh $ds "" str_skip_50.txt 50D
+    ./experiments/document_models/scripts/docs_neural.sh $ds "" str_skip_50.txt 50D
     echo $ds >> "done_dm.txt"
 done
 
@@ -33,5 +33,5 @@ done
 # do
 #     ./experiments/document_models/scripts/dm_neural.sh $ds "" str_skip_400.txt 400D
 #     echo $ds >> "done_dm.txt"
-done
+#done
 

@@ -1,23 +1,20 @@
 set -e
 VECTOR_DIM=200
-#RESULTS="demographics_"$VECTOR_DIM".tsv"
-USER_EMBEDDINGS="cohort_u2v_"$VECTOR_DIM 
-USER_EMBEDDINGS="cohort_w2v_"$VECTOR_DIM".txt"
-#WORD_EMBEDDINGS="cohort_word_embeddings.txt"
+USER_EMBEDDINGS="cohort_u2v"
 DATA_PATH="/data/ASMAT/ASMAT/experiments/demos/DATA"
-DATA_PATH="/Users/samir/Dev/projects/ASMAT/experiments/demos/DATA"
+#DATA_PATH="/Users/samir/Dev/projects/ASMAT/experiments/demos/DATA"
 NEURAL_FEATURES=$DATA_PATH"/pkl/features"
 
 #RUN CONFIGS
-GET_DATA=1
-EXTRACT=1
+GET_DATA=0
+EXTRACT=0
 TRAIN_U2V=0
 RUN_MH=1
 RUN_DEMO=1
-FEATURES=1
-LINEAR=1
+FEATURES=0
+LINEAR=0
 NLSE=1
-NLSE_INFER=1
+NLSE_INFER=0
 NLSE_HYPERPARAMS=$DATA_PATH"/confs/nlse.cfg"
 
 #get datasets
@@ -79,7 +76,7 @@ if (($FEATURES > 0)); then
                                             $NEURAL_FEATURES"/"$ds"_test_users" \
 							-out_folder $NEURAL_FEATURES \
 							-u2v \
-							-embeddings $DATA_PATH"/embeddings/"$USER_EMBEDDINGS".txt"
+							-embeddings $DATA_PATH"/embeddings/"$USER_EMBEDDINGS"_"$VECTOR_DIM".txt"
     done
 fi
 
@@ -103,7 +100,7 @@ if (($NLSE > 0)); then
                                             -test $NEURAL_FEATURES"/"$ds"_test_users" \
                                             -dev $NEURAL_FEATURES"/"$ds"_dev_users" \
                            	   		   -m $DATA_PATH"/models/"$ds"_NLSE.pkl" \
-                           	   		   -emb $DATA_PATH"/embeddings/"$USER_EMBEDDINGS".txt" \
+                           	   		   -emb $DATA_PATH"/embeddings/"$USER_EMBEDDINGS"_"$VECTOR_DIM".txt" \
 									   -sub_size 5 \
 									   -lrate 0.01 \
 									   -n_epoch 20 \

@@ -36,6 +36,7 @@ else
 fi
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/document_models"
+PROJECT_PATH="/data/ASMAT/ASMAT/experiments/document_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -44,7 +45,7 @@ MODELS=$DATA"/models"
 TRAIN=$DATASET"_train"
 DEV=$DATASET"_dev"
 TEST=$DATASET"_test"
-EMBEDDINGS="DATA/embeddings/"$EMB_FILE
+EMBEDDINGS="RAW_DATA/embeddings/"$EMB_FILE
 FILTERED_EMBEDDINGS=$NEURAL_FEATURES"/"$DATASET"_"$EMB_FILE
 NLSE_HYPERPARAMS=$PROJECT_PATH"/confs/nlse.cfg"
 LINEAR_HYPERPARAMS=$PROJECT_PATH"/confs/linear.cfg"
@@ -52,10 +53,11 @@ LINEAR_HYPERPARAMS=$PROJECT_PATH"/confs/linear.cfg"
 echo "NEURAL SMA > " $DATASET
 #OPTIONS
 CLEAN=0
-EXTRACT=0
-GET_FEATURES=0
-LINEAR_MODELS=0
+EXTRACT=1
+GET_FEATURES=1
+LINEAR_MODELS=1
 NLSE=1
+CNN=1
 HYPERPARAM=0
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
@@ -78,7 +80,7 @@ if (($EXTRACT > 0)); then
 									-vocab_from $DATA"/txt/"$TRAIN $DATA"/txt/"$DEV \
 												$DATA"/txt/"$TEST \
 									-out_folder $NEURAL_FEATURES \
-									-idx_labels	\
+									-vocab_size 100000	\
 									-embeddings $EMBEDDINGS 
 	mv $NEURAL_FEATURES"/"$EMB_FILE $FILTERED_EMBEDDINGS
 
@@ -118,29 +120,70 @@ fi
 
 if (($NLSE > 0)); then
 	echo $RED"##### NLSE ##### "$COLOR_OFF
-	python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/"$TRAIN \
-							   		   -dev $NEURAL_FEATURES"/"$DEV \
-                           	   		   -test $NEURAL_FEATURES"/"$TEST \
-                           	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
-                           	   		   -emb $FILTERED_EMBEDDINGS \
-                               		   -run_id $RUN_ID\
-                           	   		   -res_path $RESULTS \
-									   -sub_size 5 \
-									   -lrate 0.05 \
-									   -n_epoch 20 \
-									   -patience 8 \
-									   -hyperparams_path $NLSE_HYPERPARAMS
+	# python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/"$TRAIN \
+	# 						   		   -dev $NEURAL_FEATURES"/"$DEV \
+    #                        	   		   -test $NEURAL_FEATURES"/"$TEST \
+    #                        	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
+    #                        	   		   -emb $FILTERED_EMBEDDINGS \
+    #                            		   -run_id $RUN_ID\
+    #                        	   		   -res_path $RESULTS \
+	# 								   -sub_size 5 \
+	# 								   -lrate 0.05 \
+	# 								   -n_epoch 20 \
+	# 								   -patience 8 \
+	# 								   -hyperparams_path $NLSE_HYPERPARAMS
 
 	python ASMAT/toolkit/train_nlse_2.py -train $NEURAL_FEATURES"/"$TRAIN \
-							   		   -dev $NEURAL_FEATURES"/"$DEV \
-                           	   		   -test $NEURAL_FEATURES"/"$TEST \
-                           	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
-                           	   		   -emb $FILTERED_EMBEDDINGS \
-                               		   -run_id $RUN_ID"_2" \
-                           	   		   -res_path $RESULTS \
-									   -sub_size 5 \
-									   -lrate 0.05 \
-									   -n_epoch 20 \
-									   -patience 8 \
-									   -hyperparams_path $NLSE_HYPERPARAMS
+	 						   		   -dev $NEURAL_FEATURES"/"$DEV \
+                            	   		   -test $NEURAL_FEATURES"/"$TEST \
+                            	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
+                            	   		   -emb $FILTERED_EMBEDDINGS \
+                                		   -run_id $RUN_ID"_2" \
+                            	   		   -res_path $RESULTS \
+	 								   -sub_size 5 \
+	 								   -lrate 0.05 \
+	 								   -n_epoch 20 \
+	 								   -patience 8 \
+	 								   -hyperparams_path $NLSE_HYPERPARAMS
+fi
+
+
+if (($CNN > 0)); then
+	echo $RED"##### CNN ##### "$COLOR_OFF
+	# python ASMAT/models/cnn/train_cnn.py DATA/models/dist_sup.pkl DATA/txt/train.txt -train -tagField 0 -textField 1 -vectors DATA/embeddings/filtered_embedding.txt	
+	# python ASMAT/models/cnn/train_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TRAIN \
+	# 									-train -tagField 0 -textField 1 \
+	# 									-vectors $FILTERED_EMBEDDINGS
+
+	python ASMAT/models/cnn/test_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TEST \
+										-tagField 0 -textField 1
+
+
+
+
+	# python ASMAT/toolkit/train_nlse.py -train $NEURAL_FEATURES"/"$TRAIN \
+	# 						   		   -dev $NEURAL_FEATURES"/"$DEV \
+    #                        	   		   -test $NEURAL_FEATURES"/"$TEST \
+    #                        	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
+    #                        	   		   -emb $FILTERED_EMBEDDINGS \
+    #                            		   -run_id $RUN_ID\
+    #                        	   		   -res_path $RESULTS \
+	# 								   -sub_size 5 \
+	# 								   -lrate 0.05 \
+	# 								   -n_epoch 20 \
+	# 								   -patience 8 \
+	# 								   -hyperparams_path $NLSE_HYPERPARAMS
+
+	# python ASMAT/toolkit/train_nlse_2.py -train $NEURAL_FEATURES"/"$TRAIN \
+	# 						   		   -dev $NEURAL_FEATURES"/"$DEV \
+    #                        	   		   -test $NEURAL_FEATURES"/"$TEST \
+    #                        	   		   -m $MODELS"/"$DATASET"_NLSE.pkl" \
+    #                        	   		   -emb $FILTERED_EMBEDDINGS \
+    #                            		   -run_id $RUN_ID"_2" \
+    #                        	   		   -res_path $RESULTS \
+	# 								   -sub_size 5 \
+	# 								   -lrate 0.05 \
+	# 								   -n_epoch 20 \
+	# 								   -patience 8 \
+	# 								   -hyperparams_path $NLSE_HYPERPARAMS
 fi

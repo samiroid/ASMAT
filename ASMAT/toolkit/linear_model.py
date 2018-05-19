@@ -6,6 +6,7 @@ import numpy as np
 import os
 from sklearn.linear_model import SGDClassifier 
 from sklearn.naive_bayes import BernoulliNB
+from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import f1_score, accuracy_score
 import sys
 sys.path.append("..")
@@ -56,11 +57,16 @@ def hypertune(train, dev, features, obj, hyperparams, res_path=None):
 
 def main(train, test, run_id, features, hyperparameters={}, res_path=None):	
 	#train and evalute model	
-	if features[0] == "naive_bayes":
+	if features[0].lower() == "naive_bayes":
 		X_train, Y_train = get_features(train, ["bow-bin"])
 		X_test,  Y_test  = get_features(test, ["bow-bin"])	
 		model = BernoulliNB()
 		model_name = "NaiveBayes"
+	if features[0].lower() == "mlp":
+		X_train, Y_train = get_features(train, ["bow-bin"])
+		X_test,  Y_test  = get_features(test, ["bow-bin"])	
+		model = MLPClassifier(solver='lbfgs')
+		model_name = "MLP"
 	else:
 		X_train, Y_train = get_features(train, features)
 		X_test,  Y_test  = get_features(test, features)	

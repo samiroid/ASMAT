@@ -28,6 +28,7 @@ fi
 
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/document_models"
+PROJECT_PATH="/data/ASMAT/ASMAT/experiments/document_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 LINEAR_FEATURES=$DATA"/pkl/linear_features"
@@ -41,9 +42,9 @@ LINEAR_HYPERPARAMS=$PROJECT_PATH"/confs/linear.cfg"
 
 echo "BOW SMA > " $DATASET
 #OPTIONS
-CLEAN=1
-EXTRACT=1
-GET_FEATURES=1
+CLEAN=0
+EXTRACT=0
+GET_FEATURES=0
 LINEAR_MODELS=1
 HYPERPARAM=0
 
@@ -66,7 +67,7 @@ if (($EXTRACT > 0)); then
 										   $DATA"/txt/"$TEST \
 									-vocab_from $DATA"/txt/"$TRAIN $DATA"/txt/"$DEV \
 									-out_folder $LINEAR_FEATURES \
-									-idx_labels	
+									-vocab_size 100000
 fi
 ### COMPUTE FEATURES ###
 if (($GET_FEATURES > 0)); then
@@ -83,26 +84,32 @@ fi
 if (($LINEAR_MODELS > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF	
 	
-	python ASMAT/toolkit/linear_model.py -features BOW-BIN \
-										-run_id $RUN_ID \
-										-train $LINEAR_FEATURES"/"$TRAIN \
-							  			-test $LINEAR_FEATURES"/"$TEST \
-										-dev $LINEAR_FEATURES"/"$DEV \
-							 			-res_path $RESULTS \
-										-hyperparams_path $LINEAR_HYPERPARAMS 
+	# python ASMAT/toolkit/linear_model.py -features BOW-BIN \
+	# 									-run_id $RUN_ID \
+	# 									-train $LINEAR_FEATURES"/"$TRAIN \
+	# 						  			-test $LINEAR_FEATURES"/"$TEST \
+	# 									-dev $LINEAR_FEATURES"/"$DEV \
+	# 						 			-res_path $RESULTS \
+	# 									-hyperparams_path $LINEAR_HYPERPARAMS 
 	
-	python ASMAT/toolkit/linear_model.py -features BOW-FREQ \
-										-run_id $RUN_ID \
-										-train $LINEAR_FEATURES"/"$TRAIN \
-							  			-test $LINEAR_FEATURES"/"$TEST \
-										-dev $LINEAR_FEATURES"/"$DEV \
-							 			-res_path $RESULTS \
-										-hyperparams_path $LINEAR_HYPERPARAMS 
+	# python ASMAT/toolkit/linear_model.py -features BOW-FREQ \
+	# 									-run_id $RUN_ID \
+	# 									-train $LINEAR_FEATURES"/"$TRAIN \
+	# 						  			-test $LINEAR_FEATURES"/"$TEST \
+	# 									-dev $LINEAR_FEATURES"/"$DEV \
+	# 						 			-res_path $RESULTS \
+	# 									-hyperparams_path $LINEAR_HYPERPARAMS 
 
-	python ASMAT/toolkit/linear_model.py -features naive_bayes \
+	# python ASMAT/toolkit/linear_model.py -features naive_bayes \
+	# 									-run_id $RUN_ID \
+	# 									-train $LINEAR_FEATURES"/"$TRAIN \
+	# 						  			-test $LINEAR_FEATURES"/"$TEST \
+	# 									-dev $LINEAR_FEATURES"/"$DEV \
+	# 						 			-res_path $RESULTS 	
+	python ASMAT/toolkit/linear_model.py -features MLP \
 										-run_id $RUN_ID \
 										-train $LINEAR_FEATURES"/"$TRAIN \
 							  			-test $LINEAR_FEATURES"/"$TEST \
 										-dev $LINEAR_FEATURES"/"$DEV \
-							 			-res_path $RESULTS 										 
-fi
+							 			-res_path $RESULTS 	
+fi 

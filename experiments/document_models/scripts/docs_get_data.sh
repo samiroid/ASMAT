@@ -5,9 +5,9 @@ COLOR_OFF='\033[0m'       # Text Reset
 RED='\033[0;31m'          # RED
 
 #grab datasets from
-DATASETS_SRC="/Users/samir/Dev/projects/ASMAT/DATA/raw_datasets/"
+DATASETS_SRC="/Users/samir/Dev/projects/ASMAT/RAW_DATA/raw_datasets/"
 #place datasets at
-DATASETS_DST="/Users/samir/Dev/projects/ASMAT/new_experiments/low_resource/DATA/txt"
+DATASETS_DST="/Users/samir/Dev/projects/ASMAT/experiments/document_models/DATA/txt"
 
 CLEAN=1
 GET_DATA=1
