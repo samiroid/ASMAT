@@ -4,9 +4,9 @@ import numpy as np
 import cPickle as pickle
 from collections import defaultdict
 import sys, re
-
+from ipdb import set_trace
 MAX_SENTENCES = float('inf')
-def build_data_cv(train_file, cv=10, clean_string=True, tagField=1, textField=2):
+def build_data_cv(train_file, cv=10, tagField=1, textField=2):
     """
     Loads data and split into 10 folds.
     :return: sents (with class and split properties), word doc freq, list of labels.
@@ -23,11 +23,8 @@ def build_data_cv(train_file, cv=10, clean_string=True, tagField=1, textField=2)
             text = fields[textField]
             tag = fields[tagField]
             if tag not in tags:
-                tags[tag] = len(tags)
-            if clean_string:
-                clean_text = clean_str(text)
-            else:
-                clean_text = text.lower()
+                tags[tag] = len(tags)            
+            clean_text = text.lower()
             words = clean_text.split()
             for word in set(words):
                 vocab[word] += 1
@@ -35,11 +32,12 @@ def build_data_cv(train_file, cv=10, clean_string=True, tagField=1, textField=2)
                      "text": clean_text,
                      "num_words": len(words),
                      "split": np.random.randint(0, cv)}
-            revs.append(datum)
+            revs.append(datum)            
     labels = [0] * len(tags)    
     
     for tag,i in tags.iteritems():
         labels[i] = tag
+    
     return revs, vocab, labels
 
 
@@ -137,7 +135,7 @@ def process_data(train_file, clean, w2v_file=None,
     """
     np.random.seed(345)         # for replicability
     print "loading data...",
-    sents, vocab, labels = build_data_cv(train_file, cv=10, clean_string=clean,
+    sents, vocab, labels = build_data_cv(train_file, cv=10, 
                                          tagField=tagField, textField=textField)
     max_l = max(x["num_words"] for x in sents)
     print "data loaded!"

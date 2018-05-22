@@ -6,6 +6,7 @@ as described in paper:
 Convolutional Neural Networks for Sentence Classification
 http://arxiv.org/pdf/1408.5882v2.pdf
 """
+import os
 import cPickle as pickle
 import numpy as np
 import theano
@@ -21,6 +22,8 @@ from conv_net_classes import *
 from process_data import process_data
 #from evaluation import FmesSemEval, accuracy
 from sklearn.metrics import f1_score, accuracy_score
+sys.path.append("..")
+from ASMAT.lib import helpers
 
 def get_idx_from_sent(sent, word_index, max_l, pad):
     """
@@ -87,15 +90,20 @@ if __name__=="__main__":
                         help='label field in files (default %(default)s)')
     parser.add_argument('-textField', type=int, default=2,
                         help='text field in files (default %(default)s)')
+    parser.add_argument('-res_path', type=str, 
+                        help='path to results file')
+
     args = parser.parse_args()
     # test
     with open(args.model) as mfile:
         cnn = ConvNet.load(mfile)
+    
+    with open(args.model+"_aux") as mfile:
         word_index, labels, max_l, pad = pickle.load(mfile)
 
-    cnn.activations = [Iden] #TODO: save it in the model
-    pos_idx = labels.index("1")
-    neg_idx = labels.index("-1")
+    cnn.activations = ["relu"] #TODO: save it in the model
+    # pos_idx = labels.index("1")
+    # neg_idx = labels.index("-1")
     tagField = args.tagField
     textField = args.textField
 
@@ -110,6 +118,18 @@ if __name__=="__main__":
         acc = accuracy_score(np.array(test_set_y), results)
         fmes = f1_score(test_set_y, results,average="macro")
         print "Evaluation %s > acc: %.3f | fmes: %.3f" % (dataset, acc,fmes)
+        results = {"acc":round(acc,3), \
+			"avgF1":round(fmes,3),	\
+			"model":"CNN", \
+			"dataset":os.path.basename(dataset), \
+			"run_id":"NEURAL", \
+			}
+	cols = ["dataset", "run_id", "acc", "avgF1","hyper"]
+	helpers.print_results(results, columns=cols)
+	if args.res_path is not None:
+		cols = ["dataset", "model", "run_id", "acc", "avgF1"]
+		helpers.save_results(results, args.res_path, sep="\t", columns=cols)
+    
     # invert indices (from process_data.py)
     # for line, y in zip(open(args.input), results):
     #     tokens = line.split("\t")

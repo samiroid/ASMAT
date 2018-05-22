@@ -104,7 +104,7 @@ def get_parser():
                         help='word2vec embeddings file (random values if missing)')
     parser.add_argument('-dropout', type=float, default=0.0,
                         help='dropout probability (default %(default)s)')
-    parser.add_argument('-epochs', type=int, default=5,
+    parser.add_argument('-epochs', type=int, default=15,
                         help='training iterations (default %(default)s)')
     parser.add_argument('-tagField', type=int, default=1,
                         help='label field in files (default %(default)s)')
@@ -116,7 +116,6 @@ def get_parser():
 if __name__=="__main__":
 
     parser = get_parser()
-
     args = parser.parse_args()
        
     # training
@@ -127,12 +126,7 @@ if __name__=="__main__":
     # sents is a list of entries, where each entry is a dict:
     # {"y": 0/1, "text": , "num_words": , "split": cv fold}
     # vocab: dict of word doc freq
-
-    #fake user data
-    # Users = np.ones((10, U.shape[1])).astype('float32')
-    # for u in xrange(Users.shape[0]):
-    #     Users[u,:]+=u
-
+    
     filters = args.filters
     filters = "2,3"
     filter_hs = [int(x) for x in filters.split(',')]    
@@ -184,9 +178,7 @@ if __name__=="__main__":
     # test = [padded(x) for x in sents if x[split] == i]
     # train is rest
     with open(model, "wb") as mfile:        
-        train_set = make_idx_data(sents, word_index, max_l, pad) 
-        #fake_user_data = np.random.randint(Users.shape[0],size=train_set.shape[0]).astype('int32')
-        #train_set = np.concatenate((train_set,fake_user_data[:,None]),1)      
+        train_set = make_idx_data(sents, word_index, max_l, pad)         
         cnn = ConvNet(U, height, width,
                       filter_hs=filter_hs,
                       conv_non_linear=conv_non_linear,
@@ -203,6 +195,7 @@ if __name__=="__main__":
                          labels=labels,
                          model=mfile)
         
+    with open(model+"_aux", "wb") as mfile:        
         pickle.dump((word_index, labels, max_l, pad), mfile,-1)
     
         

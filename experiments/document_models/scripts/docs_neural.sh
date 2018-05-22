@@ -36,7 +36,7 @@ else
 fi
 #config
 PROJECT_PATH="/Users/samir/Dev/projects/ASMAT/experiments/document_models"
-PROJECT_PATH="/data/ASMAT/ASMAT/experiments/document_models"
+#PROJECT_PATH="/data/ASMAT/ASMAT/experiments/document_models"
 DATA=$PROJECT_PATH"/DATA"
 RESULTS=$DATA"/results/"$RESFILE
 NEURAL_FEATURES=$DATA"/pkl/neural_features"
@@ -57,7 +57,7 @@ EXTRACT=1
 GET_FEATURES=1
 LINEAR_MODELS=1
 NLSE=1
-CNN=0
+CNN=1
 HYPERPARAM=1
 if (($CLEAN > 0)); then
 	echo "CLEAN-UP!"
@@ -156,7 +156,7 @@ if (($CNN > 0)); then
 										-vectors $FILTERED_EMBEDDINGS
 
 	python ASMAT/models/cnn/test_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TEST \
-										-tagField 0 -textField 1
+										-tagField 0 -textField 1  -res_path $RESULTS
 
 
 

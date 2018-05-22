@@ -19,59 +19,7 @@ from theano.tensor.nnet import conv
 from collections import OrderedDict
 import time
 import cPickle as pickle
-
-def Fmeasure(tp, fp, fn):
-    # Precision
-    if tp+fp:
-        precision = tp/(tp+fp)
-    else:
-        precision = 0 
-    # Recall
-    if tp+fn:
-        recall    = tp/(tp+fn)
-    else:
-        recall    = 0
-    # F-measure
-    if precision + recall:
-        return 2 * (precision * recall)/(precision + recall)
-    else:
-        return 0 
-
-def get_confusionMatrix(pred, gold):
-    # Confusion Matrix
-    # This assumes the order (neut-sent, pos-sent, neg-sent)
-    # mapp     = np.array([ 1, 2, 0])
-    conf_mat = np.zeros((3, 3))
-    for y, hat_y in zip(gold, pred):        
-        conf_mat[y, hat_y] += 1
-
-    return conf_mat
-
-def FmesSemEval(pred, gold, pos_ind, neg_ind):
-    # This assumes the order (neut-sent, pos-sent, neg-sent)    
-    confusionMatrix = get_confusionMatrix(pred, gold)
-    
-    # POS-SENT 
-    # True positives pos-sent
-    tp = confusionMatrix[pos_ind, pos_ind]
-    # False postives pos-sent
-    fp = confusionMatrix[:, pos_ind].sum() - tp
-    # False engatives pos-sent
-    fn = confusionMatrix[pos_ind, :].sum() - tp
-    # Fmeasure binary
-    FmesPosSent = Fmeasure(tp, fp, fn)
-
-    # NEG-SENT 
-    # True positives pos-sent
-    tp = confusionMatrix[neg_ind, neg_ind]
-    # False postives pos-sent
-    fp = confusionMatrix[:, neg_ind].sum() - tp
-    # False engatives pos-sent
-    fn = confusionMatrix[neg_ind, :].sum() - tp
-    # Fmeasure binary
-    FmesNegSent = Fmeasure(tp, fp, fn)
- 
-    return (FmesPosSent + FmesNegSent)/2
+from sklearn.metrics import f1_score, accuracy_score
 
 def ReLU(x):
     y = T.maximum(0.0, x)
@@ -621,7 +569,7 @@ class ConvNet(MLPDropout):
         #                                 self.x: val_set_x[batch_start:batch_end],
         #                                 self.y: val_set_y[batch_start:batch_end]},
         #                             allow_input_downcast=True)
-
+    
         # errors on train set
         train_error = theano.function([self.index], self.errors(self.y),
                                       givens={
@@ -638,9 +586,7 @@ class ConvNet(MLPDropout):
         test_model = theano.function([self.x, self.y], test_error, allow_input_downcast=True)
 
         # start training over mini-batches
-        print 'training...'
-        pos_ind = labels.index('1')
-        neg_ind = labels.index('-1')
+        print 'training...'        
         best_val_perf = 0
         test_perf = 0    
         patience = 5
@@ -663,7 +609,7 @@ class ConvNet(MLPDropout):
             test_loss = test_model(val_set_x, val_set_y)
             test_perf = 1 - test_loss         
             predz = make_preds(val_set_x)
-            val_perf = FmesSemEval(predz, val_set_y, pos_ind, neg_ind)
+            val_perf = f1_score(predz, val_set_y, average="macro")
             
             print('epoch: %i, training time: %.2f secs, train perf: %.2f %%, val perf: %.2f %%' % (
                 epoch, time.time()-start_time, train_perf * 100., val_perf*100.))                  
