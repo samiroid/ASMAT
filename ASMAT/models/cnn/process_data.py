@@ -5,7 +5,7 @@ import cPickle as pickle
 from collections import defaultdict
 import sys, re
 
-MAX_SENTENCES = 1000
+MAX_SENTENCES = float('inf')
 def build_data_cv(train_file, cv=10, clean_string=True, tagField=1, textField=2):
     """
     Loads data and split into 10 folds.

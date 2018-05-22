@@ -154,7 +154,7 @@ if __name__=="__main__":
     classes = set(x["y"] for x in sents)
     width = U.shape[1]
     conv_non_linear = "relu"
-    batch_size = 200
+    batch_size = 50
     dropout_rate = args.dropout
     sqr_norm_lim = 9
     shuffle_batch = True

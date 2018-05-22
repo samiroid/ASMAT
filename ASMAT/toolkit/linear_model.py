@@ -56,17 +56,22 @@ def hypertune(train, dev, features, obj, hyperparams, res_path=None):
 	return best_hp, best_score
 
 def main(train, test, run_id, features, hyperparameters={}, res_path=None):	
-	#train and evalute model	
+	#train and evalute model		
 	if features[0].lower() == "naive_bayes":
 		X_train, Y_train = get_features(train, ["bow-bin"])
 		X_test,  Y_test  = get_features(test, ["bow-bin"])	
 		model = BernoulliNB()
 		model_name = "NaiveBayes"
-	if features[0].lower() == "mlp":
+	elif features[0].lower() == "mlp":
 		X_train, Y_train = get_features(train, ["bow-bin"])
 		X_test,  Y_test  = get_features(test, ["bow-bin"])	
-		model = MLPClassifier(solver='lbfgs')
+		model = MLPClassifier(solver='lbfgs', activation="logistic", hidden_layer_sizes=[400])
 		model_name = "MLP"
+	elif features[0].lower() == "mlp-2":
+		X_train, Y_train = get_features(train, ["bow-bin"])
+		X_test,  Y_test  = get_features(test, ["bow-bin"])			
+		model = MLPClassifier(solver='lbfgs', activation="logistic", hidden_layer_sizes=[400,100])
+		model_name = "MLP-2"
 	else:
 		X_train, Y_train = get_features(train, features)
 		X_test,  Y_test  = get_features(test, features)	

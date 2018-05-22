@@ -84,7 +84,7 @@ fi
 if (($LINEAR_MODELS > 0)); then
 	echo $RED"##### LINEAR MODELS ##### "$COLOR_OFF	
 	
-	# python ASMAT/toolkit/linear_model.py -features BOW-BIN \
+	# python ASMAT/toolkit/linear_model.py -features bow-bin \
 	# 									-run_id $RUN_ID \
 	# 									-train $LINEAR_FEATURES"/"$TRAIN \
 	# 						  			-test $LINEAR_FEATURES"/"$TEST \
@@ -92,7 +92,7 @@ if (($LINEAR_MODELS > 0)); then
 	# 						 			-res_path $RESULTS \
 	# 									-hyperparams_path $LINEAR_HYPERPARAMS 
 	
-	# python ASMAT/toolkit/linear_model.py -features BOW-FREQ \
+	# python ASMAT/toolkit/linear_model.py -features bow-freq \
 	# 									-run_id $RUN_ID \
 	# 									-train $LINEAR_FEATURES"/"$TRAIN \
 	# 						  			-test $LINEAR_FEATURES"/"$TEST \
@@ -105,8 +105,16 @@ if (($LINEAR_MODELS > 0)); then
 	# 									-train $LINEAR_FEATURES"/"$TRAIN \
 	# 						  			-test $LINEAR_FEATURES"/"$TEST \
 	# 									-dev $LINEAR_FEATURES"/"$DEV \
-	# 						 			-res_path $RESULTS 	
+	#  						 			-res_path $RESULTS 	
+	
 	python ASMAT/toolkit/linear_model.py -features MLP \
+										-run_id $RUN_ID \
+										-train $LINEAR_FEATURES"/"$TRAIN \
+							  			-test $LINEAR_FEATURES"/"$TEST \
+										-dev $LINEAR_FEATURES"/"$DEV \
+							 			-res_path $RESULTS 	
+
+	python ASMAT/toolkit/linear_model.py -features MLP-2 \
 										-run_id $RUN_ID \
 										-train $LINEAR_FEATURES"/"$TRAIN \
 							  			-test $LINEAR_FEATURES"/"$TEST \
