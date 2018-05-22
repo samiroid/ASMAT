@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-
+import numpy as np
 def build_vocabulary(docs, zero_for_padd=False, max_words=None):
     """
         Compute a dictionary index mapping words into indices
@@ -15,6 +15,12 @@ def build_vocabulary(docs, zero_for_padd=False, max_words=None):
     if zero_for_padd: words = ['_PAD_'] + words
     vocab = {w:i for i, w in enumerate(words)}
     return vocab
+
+def one_hot(index, items):
+    oh = np.zeros((len(items),len(index))) 
+    for i,item in enumerate(items):
+        oh[i,index[item]] = 1
+    return oh
 
 def idx2word(wrd2idx):
     '''

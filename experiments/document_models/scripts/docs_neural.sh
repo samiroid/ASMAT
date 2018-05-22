@@ -54,9 +54,9 @@ echo "NEURAL SMA > " $DATASET
 #OPTIONS
 CLEAN=0
 EXTRACT=1
-GET_FEATURES=1
-LINEAR_MODELS=1
-NLSE=1
+GET_FEATURES=0
+LINEAR_MODELS=0
+NLSE=0
 CNN=1
 HYPERPARAM=1
 if (($CLEAN > 0)); then
@@ -151,15 +151,27 @@ fi
 if (($CNN > 0)); then
 	echo $RED"##### CNN ##### "$COLOR_OFF
 	# python ASMAT/models/cnn/train_cnn.py DATA/models/dist_sup.pkl DATA/txt/train.txt -train -tagField 0 -textField 1 -vectors DATA/embeddings/filtered_embedding.txt	
-	python ASMAT/models/cnn/train_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TRAIN \
-										-train -tagField 0 -textField 1 -static \
-										-vectors $FILTERED_EMBEDDINGS
+	
+	python ASMAT/models/cnn/train_cnn.py -train $DATA"/txt/"$TRAIN \
+										 -test $DATA"/txt/"$TEST \
+										 -dev $DATA"/txt/"$DEV \
+										-emb $FILTERED_EMBEDDINGS \
+										-res_path $RESULTS \
+										-epochs 3
 
-	python ASMAT/models/cnn/test_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TEST \
-										-tagField 0 -textField 1  -res_path $RESULTS
-
-
-
-
+	
 
 fi
+
+# if (($CNN > 0)); then
+# 	echo $RED"##### CNN ##### "$COLOR_OFF
+# 	# python ASMAT/models/cnn/train_cnn.py DATA/models/dist_sup.pkl DATA/txt/train.txt -train -tagField 0 -textField 1 -vectors DATA/embeddings/filtered_embedding.txt	
+	
+# 	python ASMAT/models/senti_cnn/train_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TRAIN \
+# 										-train -tagField 0 -textField 1 -static \
+# 										-vectors $FILTERED_EMBEDDINGS -epochs 3
+
+# 	python ASMAT/models/senti_cnn/test_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TRAIN \
+# 										-tagField 0 -textField 1  
+
+# fi
