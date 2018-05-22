@@ -152,7 +152,7 @@ if (($CNN > 0)); then
 	echo $RED"##### CNN ##### "$COLOR_OFF
 	# python ASMAT/models/cnn/train_cnn.py DATA/models/dist_sup.pkl DATA/txt/train.txt -train -tagField 0 -textField 1 -vectors DATA/embeddings/filtered_embedding.txt	
 	python ASMAT/models/cnn/train_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TRAIN \
-										-train -tagField 0 -textField 1 \
+										-train -tagField 0 -textField 1 -static \
 										-vectors $FILTERED_EMBEDDINGS
 
 	python ASMAT/models/cnn/test_cnn.py $MODELS"/"$DATASET"_CNN.pkl" $DATA"/txt/"$TEST \
