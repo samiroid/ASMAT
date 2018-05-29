@@ -177,6 +177,7 @@ def train_model(nn, train_x, train_y, dev_x, dev_y, silent=False):
             break
     #load best model
     nn.load(TMP_MODELS)
+    os.remove(TMP_MODELS)
     return nn
 
 def load_model(model_path):
