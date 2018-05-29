@@ -75,7 +75,7 @@ def evaluate(model, X, Y):
     return avgF1, acc
 
 def train_model(nn, train_x, train_y, dev_x, dev_y, silent=False):    
-    TMP_MODELS="/tmp/subspace_"+str(uuid.uuid4())+".pkl"
+    TMP_MODELS="subspace_"+str(uuid.uuid4())+".pkl"
     print "[temp model: {}]".format(TMP_MODELS)
     train_x, st, ed = build_input(train_x)
     n_sent_train = len(st)    
